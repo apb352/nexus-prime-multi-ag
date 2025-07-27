@@ -11,7 +11,7 @@ import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
-import { createEnhancedChatPrompt, createBasicChatPrompt } from '@/lib/chat-utils';
+import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -44,6 +44,7 @@ export function ChatWindow({
   const [zIndex, setZIndex] = useState(1500);
   const [internetEnabled, setInternetEnabled] = useState(agent.internetSettings?.enabled ?? false);
   const [autoSearch, setAutoSearch] = useState(agent.internetSettings?.autoSearch ?? false);
+  const [isTestMode, setIsTestMode] = useState(false);
   
   // Update internet settings when agent changes
   useEffect(() => {
@@ -65,10 +66,47 @@ export function ChatWindow({
     }
   }, [messages]);
 
+  const handleTestAPI = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setIsTestMode(true);
+    
+    try {
+      console.log('Testing basic API connectivity...');
+      
+      if (typeof spark === 'undefined') {
+        throw new Error('Spark API is not available');
+      }
+      
+      const testPrompt = spark.llmPrompt`Hello! This is a simple test message. Please respond with "API test successful".`;
+      const response = await spark.llm(testPrompt, selectedModel);
+      
+      addMessage(agent.id, {
+        content: `API Test Result: ${response}`,
+        sender: 'ai',
+        agentId: agent.id
+      });
+      
+      console.log('API test successful!');
+      
+    } catch (error) {
+      console.error('API test failed:', error);
+      addMessage(agent.id, {
+        content: `API Test Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        sender: 'ai',
+        agentId: agent.id
+      });
+    } finally {
+      setIsLoading(false);
+      setIsTestMode(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
 
-    const userMessage = message.trim();
+    const userMessage = cleanUserMessage(message.trim());
     setMessage('');
     setIsLoading(true);
 
@@ -83,49 +121,80 @@ export function ChatWindow({
       console.log('Starting chat message handling for:', userMessage);
       console.log('Internet enabled:', internetEnabled, 'Auto search:', autoSearch);
 
-      // Basic validation
+      // Basic validation with better error handling
+      if (typeof window === 'undefined') {
+        throw new Error('Window object is not available');
+      }
+
       if (typeof spark === 'undefined') {
-        throw new Error('Spark API is not available');
+        console.error('Spark global object not found. Available globals:', Object.keys(window));
+        throw new Error('Spark API is not available - please check if the Spark runtime is properly loaded');
       }
 
-      if (!spark.llm || !spark.llmPrompt) {
-        throw new Error('Spark LLM methods are not available');
+      if (!spark.llm) {
+        console.error('Spark.llm method not found. Available spark methods:', Object.keys(spark));
+        throw new Error('Spark LLM method is not available');
       }
 
-      console.log('Creating enhanced prompt with internet capabilities...');
-      
+      if (!spark.llmPrompt) {
+        console.error('Spark.llmPrompt method not found. Available spark methods:', Object.keys(spark));
+        throw new Error('Spark LLM prompt method is not available');
+      }
+
+      if (!userMessage || userMessage.length === 0) {
+        throw new Error('Message cannot be empty');
+      }
+
+      if (!agent || !agent.name) {
+        throw new Error('Agent information is missing');
+      }
+
       // Create enhanced prompt with internet context
-      const promptResult = await createEnhancedChatPrompt({
-        internetEnabled,
-        autoSearch,
-        userMessage,
-        agentName: agent.name,
-        agentPersonality: agent.personality,
-        agentMood: agent.mood
-      });
-      
-      console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
-      console.log('Internet summary:', promptResult.internetSummary);
-      console.log('Final prompt preview:', promptResult.prompt.substring(0, 200) + '...');
-      
-      // Create the spark prompt properly
-      const finalPrompt = spark.llmPrompt`${promptResult.prompt}`;
-      
-      // Use the prompt directly since it's already formatted
-      console.log('Calling spark.llm with model:', selectedModel);
       let aiResponse: string;
       
       try {
+        console.log('Creating enhanced prompt with internet capabilities...');
+        
+        const promptResult = await createEnhancedChatPrompt({
+          internetEnabled,
+          autoSearch,
+          userMessage,
+          agentName: agent.name,
+          agentPersonality: agent.personality,
+          agentMood: agent.mood
+        });
+        
+        console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
+        
+        // Create the spark prompt properly
+        const finalPrompt = spark.llmPrompt`${promptResult.prompt}`;
+        
+        console.log('Calling spark.llm with model:', selectedModel);
         aiResponse = await spark.llm(finalPrompt, selectedModel);
-      } catch (llmError) {
-        // If the enhanced prompt fails due to content filtering, try a simpler prompt
-        if (llmError instanceof Error && (llmError.message.includes('content_filter') || llmError.message.includes('ResponsibleAIPolicyViolation'))) {
-          console.log('Enhanced prompt failed content filter, trying basic prompt...');
+        
+      } catch (enhancedError) {
+        console.log('Enhanced prompt failed, trying basic prompt...', enhancedError);
+        
+        try {
+          // Try basic prompt with agent personality
           const basicPromptText = createBasicChatPrompt(userMessage, agent.name, agent.personality, agent.mood);
           const basicPrompt = spark.llmPrompt`${basicPromptText}`;
           aiResponse = await spark.llm(basicPrompt, selectedModel);
-        } else {
-          throw llmError;
+          
+        } catch (basicError) {
+          console.log('Basic prompt failed, trying minimal prompt...', basicError);
+          
+          try {
+            // Final fallback - ultra-simple prompt
+            const minimalPrompt = spark.llmPrompt`Please respond helpfully to: ${userMessage}`;
+            aiResponse = await spark.llm(minimalPrompt, selectedModel);
+          } catch (minimalError) {
+            console.log('All prompts failed, trying direct response...', minimalError);
+            
+            // Last resort - completely neutral prompt
+            const neutralPrompt = spark.llmPrompt`User says: "${userMessage}". Please provide a helpful response.`;
+            aiResponse = await spark.llm(neutralPrompt, selectedModel);
+          }
         }
       }
       
@@ -175,9 +244,9 @@ export function ChatWindow({
         
         // Provide more specific error messages
         if (error.message.includes('content_filter') || error.message.includes('ResponsibleAIPolicyViolation')) {
-          errorMessage = 'I apologize, but I cannot process that request. Please try rephrasing your message.';
+          errorMessage = 'I apologize, but I cannot process that request due to content policies. Please try rephrasing your message in a different way.';
         } else if (error.message.includes('Spark API')) {
-          errorMessage = 'AI services are temporarily unavailable. Please try again.';
+          errorMessage = 'AI services are temporarily unavailable. Please try again in a moment.';
         } else if (error.message.includes('Invalid response')) {
           errorMessage = 'Received an invalid response. Please try rephrasing your message.';
         } else if (error.message.includes('Empty response')) {
@@ -186,6 +255,10 @@ export function ChatWindow({
           errorMessage = 'Weather service is temporarily unavailable, but I can still help with other questions.';
         } else if (error.message.includes('Internet')) {
           errorMessage = 'Internet services are experiencing issues, but I can still help with general questions.';
+        } else if (error.message.includes('properly loaded')) {
+          errorMessage = 'The AI system is still loading. Please wait a moment and try again.';
+        } else if (error.message.includes('LLM request failed: 400')) {
+          errorMessage = 'Your message triggered a content filter. Please try rephrasing your question.';
         }
       }
       
@@ -385,6 +458,17 @@ export function ChatWindow({
             onInternetToggle={handleInternetToggle}
             onAutoSearchToggle={handleAutoSearchToggle}
           />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleTestAPI}
+            disabled={isLoading}
+            className="text-xs"
+            title="Test API Connection"
+          >
+            {isTestMode ? 'Testing...' : 'Test'}
+          </Button>
           
           <Button
             variant="ghost"

@@ -3,11 +3,13 @@ import { useKV } from '@github/spark/hooks';
 import { AgentGrid } from '@/components/AgentGrid';
 import { ChatWindow } from '@/components/ChatWindow';
 import { ThemeSelector } from '@/components/ThemeSelector';
+import { DebugPanel } from '@/components/DebugPanel';
 import { useAgents } from '@/hooks/use-agents';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
 
 function App() {
   const [chatWindows, setChatWindows] = useKV<ChatWindowType[]>('nexus-chat-windows', []);
+  const [showDebug, setShowDebug] = useState(false);
   const { agents, updateAgentStatus, updateAgent, getAgent } = useAgents();
 
   const handleAgentSelect = (agent: AIAgent) => {
@@ -93,6 +95,16 @@ function App() {
 
       <ThemeSelector />
       
+      {/* Debug toggle - hidden in production */}
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="fixed top-4 right-20 z-50 bg-primary text-primary-foreground px-2 py-1 rounded text-xs"
+        >
+          {showDebug ? 'Hide Debug' : 'Show Debug'}
+        </button>
+      )}
+      
       {/* Main content */}
       <div className="relative z-10">
         <AgentGrid onAgentSelect={handleAgentSelect} />
@@ -115,6 +127,9 @@ function App() {
           />
         );
       })}
+      
+      {/* Debug Panel */}
+      {showDebug && <DebugPanel />}
     </div>
   );
 }

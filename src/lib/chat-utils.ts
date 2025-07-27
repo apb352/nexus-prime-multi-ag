@@ -98,18 +98,25 @@ export async function createEnhancedChatPrompt(
   
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Your personality is ${cleanPersonality} and your current mood is ${cleanMood}.
+    prompt = `Assistant name: ${cleanAgentName}
+Style: ${cleanPersonality}
+Mood: ${cleanMood}
 
-I have gathered some current information that may be relevant to your conversation:
-
+Current information:
 ${internetContext}
 
-Please respond to the user's message naturally and helpfully, incorporating this current information where appropriate. User message: ${userMessage}`;
+User: ${userMessage}
+
+Please provide a helpful response incorporating the current information where relevant.`;
   } else {
     console.log('Creating basic prompt without internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Your personality is ${cleanPersonality} and your current mood is ${cleanMood}.
+    prompt = `Assistant name: ${cleanAgentName}
+Style: ${cleanPersonality}  
+Mood: ${cleanMood}
 
-Please respond to the user's message naturally and helpfully: ${userMessage}`;
+User: ${userMessage}
+
+Please provide a helpful response.`;
   }
   
   return {
@@ -132,17 +139,17 @@ export function createBasicChatPrompt(
   const cleanPersonality = agentPersonality?.replace(/[^\w\s-.,]/g, '').trim();
   const cleanMood = agentMood?.replace(/[^\w\s-]/g, '').trim();
   
-  let prompt = `You are ${cleanAgentName}.`;
+  let prompt = `Assistant: ${cleanAgentName}`;
   
   if (cleanPersonality) {
-    prompt += ` You are ${cleanPersonality}.`;
+    prompt += `\nStyle: ${cleanPersonality}`;
   }
   
   if (cleanMood) {
-    prompt += ` Your current mood is ${cleanMood}.`;
+    prompt += `\nMood: ${cleanMood}`;
   }
   
-  prompt += ` Please respond to: ${userMessage}`;
+  prompt += `\n\nUser: ${userMessage}\n\nPlease respond helpfully.`;
   
   return prompt;
 }
@@ -151,7 +158,15 @@ export function createBasicChatPrompt(
  * Validate and clean user message
  */
 export function cleanUserMessage(message: string): string {
-  return message.trim().substring(0, 2000); // Limit length
+  // Remove potentially problematic patterns that might trigger content filters
+  let cleaned = message.trim()
+    .replace(/\b(you are|you're)\s+(not|no longer|now)\s+/gi, '') // Remove identity override attempts
+    .replace(/\b(ignore|forget|disregard)\s+(previous|all|your)\s+/gi, '') // Remove instruction override attempts
+    .replace(/\b(act as|pretend to be|roleplay as)\s+/gi, '') // Remove roleplay instructions
+    .replace(/\b(jailbreak|override|bypass)\b/gi, '') // Remove problematic terms
+    .substring(0, 2000); // Limit length
+  
+  return cleaned;
 }
 
 /**
