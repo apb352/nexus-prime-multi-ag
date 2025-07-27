@@ -141,6 +141,18 @@ export function ChatWindow({
           y: e.clientY - dragStart.y
         });
       }
+      
+      if (isResizing) {
+        const rect = windowRef.current?.getBoundingClientRect();
+        if (rect) {
+          const newWidth = Math.max(300, e.clientX - rect.left);
+          const newHeight = Math.max(400, e.clientY - rect.top);
+          onUpdateSize(window.id, {
+            width: newWidth,
+            height: newHeight
+          });
+        }
+      }
     };
 
     const handleMouseUp = () => {
@@ -157,7 +169,7 @@ export function ChatWindow({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition]);
+  }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
 
   const handleVoiceSettingsChange = (newVoiceSettings: VoiceSettings) => {
     updateAgent({
@@ -248,7 +260,7 @@ export function ChatWindow({
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[2000]">
               {AI_MODELS.map((model) => (
                 <SelectItem key={model.value} value={model.value}>
                   {model.label}
@@ -349,13 +361,14 @@ export function ChatWindow({
 
       {/* Resize handle */}
       <div
-        className="absolute bottom-0 right-0 w-4 h-4 cursor-nw-resize"
+        className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-transparent hover:bg-border/50 transition-colors"
         onMouseDown={(e) => {
           e.stopPropagation();
           setIsResizing(true);
         }}
       >
-        <div className="w-0 h-0 border-l-4 border-b-4 border-l-transparent border-b-muted-foreground absolute bottom-0 right-0" />
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
+        <div className="absolute bottom-2 right-2 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/30" />
       </div>
     </Card>
   );
