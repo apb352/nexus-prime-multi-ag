@@ -11,7 +11,7 @@ import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
-import { createEnhancedChatPrompt } from '@/lib/chat-utils';
+import { createEnhancedChatPrompt, createBasicChatPrompt } from '@/lib/chat-utils';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -113,7 +113,21 @@ export function ChatWindow({
       
       // Use the prompt directly since it's already formatted
       console.log('Calling spark.llm with model:', selectedModel);
-      const aiResponse = await spark.llm(finalPrompt, selectedModel);
+      let aiResponse: string;
+      
+      try {
+        aiResponse = await spark.llm(finalPrompt, selectedModel);
+      } catch (llmError) {
+        // If the enhanced prompt fails due to content filtering, try a simpler prompt
+        if (llmError instanceof Error && (llmError.message.includes('content_filter') || llmError.message.includes('ResponsibleAIPolicyViolation'))) {
+          console.log('Enhanced prompt failed content filter, trying basic prompt...');
+          const basicPromptText = createBasicChatPrompt(userMessage, agent.name, agent.personality, agent.mood);
+          const basicPrompt = spark.llmPrompt`${basicPromptText}`;
+          aiResponse = await spark.llm(basicPrompt, selectedModel);
+        } else {
+          throw llmError;
+        }
+      }
       
       console.log('Received AI response type:', typeof aiResponse);
       console.log('AI response length:', aiResponse?.length || 0);
@@ -160,7 +174,9 @@ export function ChatWindow({
         }
         
         // Provide more specific error messages
-        if (error.message.includes('Spark API')) {
+        if (error.message.includes('content_filter') || error.message.includes('ResponsibleAIPolicyViolation')) {
+          errorMessage = 'I apologize, but I cannot process that request. Please try rephrasing your message.';
+        } else if (error.message.includes('Spark API')) {
           errorMessage = 'AI services are temporarily unavailable. Please try again.';
         } else if (error.message.includes('Invalid response')) {
           errorMessage = 'Received an invalid response. Please try rephrasing your message.';

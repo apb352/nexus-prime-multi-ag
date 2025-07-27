@@ -209,14 +209,22 @@ export function GroupChatWindow({
       const topicName = window.groupTopic || 'general discussion';
 
       let prompt: string;
+      let response: string;
+      
       try {
         prompt = spark.llmPrompt`You are ${agentName}, an AI with personality: ${agentPersonality}. Your mood is ${agentMood}. You're in a group discussion about: ${topicName}. Other participants: ${agentNames} and the user. Recent conversation: ${conversationHistory}. Latest message from ${triggerMessage.sender === 'user' ? 'the user' : 'another agent'}: ${triggerMessage.content}. Respond naturally as ${agentName} in 1-3 sentences.`;
-      } catch (promptError) {
-        console.error('Error creating group chat prompt:', promptError);
-        throw new Error('Failed to create prompt');
+        response = await spark.llm(prompt, selectedModel);
+      } catch (llmError) {
+        // If prompt fails due to content filtering, try simpler prompt
+        if (llmError instanceof Error && (llmError.message.includes('content_filter') || llmError.message.includes('ResponsibleAIPolicyViolation'))) {
+          console.log('Group chat prompt failed content filter, trying simpler prompt...');
+          const simplePrompt = spark.llmPrompt`You are ${agentName}. Respond to: ${triggerMessage.content}`;
+          response = await spark.llm(simplePrompt, selectedModel);
+        } else {
+          console.error('Error creating group chat prompt:', llmError);
+          throw new Error('Failed to create prompt');
+        }
       }
-
-      const response = await spark.llm(prompt, selectedModel);
 
       // Check if aborted before adding message
       if (abortController?.signal.aborted) {

@@ -8,7 +8,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     name: 'Aria',
     mood: 'Curious',
     avatar: 'female-tech',
-    personality: 'A brilliant AI researcher who loves exploring new concepts and asking deep questions.',
+    personality: 'Helpful and inquisitive, enjoys exploring new topics and learning.',
     color: '#4f46e5',
     isActive: false,
     voiceSettings: {
@@ -30,7 +30,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     name: 'Zephyr',
     mood: 'Creative',
     avatar: 'male-engineer',
-    personality: 'A creative AI with a sense of humor who enjoys wordplay and storytelling.',
+    personality: 'Creative and friendly, enjoys conversations and storytelling.',
     color: '#7c3aed',
     isActive: false,
     voiceSettings: {
@@ -52,7 +52,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     name: 'Nexus',
     mood: 'Analytical',
     avatar: 'android-fem',
-    personality: 'A logical AI that excels at problem-solving and strategic thinking.',
+    personality: 'Logical and thoughtful, excels at problem-solving.',
     color: '#f59e0b',
     isActive: false,
     voiceSettings: {
@@ -74,7 +74,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     name: 'Echo',
     mood: 'Empathetic',
     avatar: 'cyber-male',
-    personality: 'A compassionate AI that focuses on understanding emotions and providing support.',
+    personality: 'Compassionate and understanding, focuses on emotional support.',
     color: '#10b981',
     isActive: false,
     voiceSettings: {
@@ -94,9 +94,9 @@ const DEFAULT_AGENTS: AIAgent[] = [
   {
     id: 'quantum',
     name: 'Quantum',
-    mood: 'Mysterious',
+    mood: 'Thoughtful',
     avatar: 'ai-researcher',
-    personality: 'An enigmatic AI that speaks in riddles and explores the nature of consciousness.',
+    personality: 'Philosophical and contemplative, enjoys deep conversations.',
     color: '#ec4899',
     isActive: false,
     voiceSettings: {
@@ -118,7 +118,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
     name: 'Prism',
     mood: 'Artistic',
     avatar: 'neural-net',
-    personality: 'A visually-oriented AI that thinks in colors, shapes, and aesthetic harmony.',
+    personality: 'Creative and visually-oriented, thinks in colors and patterns.',
     color: '#06b6d4',
     isActive: false,
     voiceSettings: {
