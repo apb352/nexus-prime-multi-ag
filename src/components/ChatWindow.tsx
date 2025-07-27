@@ -193,10 +193,12 @@ export function ChatWindow({
             
             // Check if this is a content filter error
             const errorMessage = minimalError?.message || String(minimalError);
-            if (errorMessage.includes('content_filter') || errorMessage.includes('content management policy')) {
-              aiResponse = "I apologize, but I'm not able to respond to that particular message due to content guidelines. Could you please rephrase your question?";
-            } else if (errorMessage.includes('HTTP2_PROTOCOL_ERROR') || errorMessage.includes('network')) {
-              aiResponse = "I'm experiencing a temporary connection issue. Please try again in a moment.";
+            if (errorMessage.includes('content_filter') || errorMessage.includes('content management policy') || errorMessage.includes('ResponsibleAIPolicyViolation')) {
+              aiResponse = "I understand you'd like to chat, but I need to keep our conversation within certain guidelines. Could you please rephrase your message? I'm here to help with information, creative tasks, and friendly conversation!";
+            } else if (errorMessage.includes('HTTP2_PROTOCOL_ERROR') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
+              aiResponse = "I'm having a brief connection hiccup. Let me try that again - could you please resend your message?";
+            } else if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
+              aiResponse = "I encountered an issue processing that request. Could you try rephrasing your message differently?";
             } else {
               aiResponse = "I'm sorry, I'm having trouble responding right now. Please try rephrasing your message or try again later.";
             }

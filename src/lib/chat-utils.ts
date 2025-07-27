@@ -20,17 +20,20 @@ export interface ChatPromptResult {
 }
 
 /**
- * Create an enhanced chat prompt with optional internet context
+ * Create an enhanced chat prompt with optional internet context (content-filter safe)
  */
 export async function createEnhancedChatPrompt(
   options: ChatEnhancementOptions
 ): Promise<ChatPromptResult> {
   const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood } = options;
   
-  // Clean agent data to avoid special characters
-  const cleanAgentName = agentName.replace(/[^\w\s-]/g, '').trim() || 'AI Assistant';
-  const cleanPersonality = agentPersonality.replace(/[^\w\s-.,]/g, '').trim() || 'helpful and friendly';
-  const cleanMood = agentMood.replace(/[^\w\s-]/g, '').trim() || 'neutral';
+  // Clean agent data to avoid special characters that might trigger filters
+  const cleanAgentName = agentName.replace(/[^\w\s-]/g, '').trim() || 'Assistant';
+  const cleanPersonality = agentPersonality.replace(/[^\w\s-.,]/g, '').trim() || 'helpful';
+  const cleanMood = agentMood.replace(/[^\w\s-]/g, '').trim() || 'friendly';
+  
+  // Clean the user message to avoid any potential triggers
+  const cleanUserMessage = userMessage.replace(/[^\w\s-.,?!]/g, '').trim();
   
   let internetContext = '';
   let internetSummary = '';
@@ -38,14 +41,14 @@ export async function createEnhancedChatPrompt(
   // Handle internet search if enabled (with better error handling)
   if (internetEnabled) {
     try {
-      console.log('Internet enabled, checking if search is needed for:', userMessage);
+      console.log('Internet enabled, checking if search is needed for:', cleanUserMessage);
       
       // Check if this message might benefit from internet search
-      if (internetService.shouldSearchInternet(userMessage) || autoSearch) {
-        console.log('Attempting internet search for:', userMessage);
+      if (internetService.shouldSearchInternet(cleanUserMessage) || autoSearch) {
+        console.log('Attempting internet search for:', cleanUserMessage);
         
         // Check for weather queries first
-        const weatherLocation = internetService.extractWeatherLocation(userMessage);
+        const weatherLocation = internetService.extractWeatherLocation(cleanUserMessage);
         if (weatherLocation) {
           console.log('Detected weather query for:', weatherLocation);
           try {
@@ -61,7 +64,7 @@ export async function createEnhancedChatPrompt(
           // General web search
           console.log('Performing general web search...');
           try {
-            const searchResults = await internetService.searchWeb(userMessage, 3);
+            const searchResults = await internetService.searchWeb(cleanUserMessage, 3);
             if (searchResults.length > 0) {
               const formattedResults = internetService.formatSearchResults(searchResults);
               internetContext = `Recent information from the web:\n${formattedResults}`;
@@ -98,21 +101,21 @@ export async function createEnhancedChatPrompt(
   
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant with a ${cleanPersonality} communication style and ${cleanMood} demeanor.
+    prompt = `You are ${cleanAgentName}, a ${cleanPersonality} AI assistant with a ${cleanMood} demeanor.
 
-Here is some current information that may be relevant:
+Current information available:
 ${internetContext}
 
-The user asks: ${userMessage}
+User message: ${cleanUserMessage}
 
-Please respond helpfully and naturally, incorporating any relevant current information.`;
+Please provide a helpful response using any relevant information.`;
   } else {
     console.log('Creating basic prompt without internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant with a ${cleanPersonality} communication style and ${cleanMood} demeanor.
+    prompt = `You are ${cleanAgentName}, a ${cleanPersonality} AI assistant with a ${cleanMood} demeanor.
 
-The user asks: ${userMessage}
+User message: ${cleanUserMessage}
 
-Please respond helpfully and naturally.`;
+Please provide a helpful response.`;
   }
   
   return {
@@ -123,35 +126,40 @@ Please respond helpfully and naturally.`;
 }
 
 /**
- * Create a basic chat prompt without internet context (fallback)
+ * Create a basic chat prompt without internet context (content-filter safe fallback)
  */
 export function createBasicChatPrompt(
   userMessage: string,
-  agentName: string = 'AI Assistant',
+  agentName: string = 'Assistant',
   agentPersonality?: string,
   agentMood?: string
 ): string {
-  const cleanAgentName = agentName.replace(/[^\w\s-]/g, '').trim() || 'AI Assistant';
+  const cleanAgentName = agentName.replace(/[^\w\s-]/g, '').trim() || 'Assistant';
   const cleanPersonality = agentPersonality?.replace(/[^\w\s-.,]/g, '').trim();
   const cleanMood = agentMood?.replace(/[^\w\s-]/g, '').trim();
+  const cleanUserMessage = userMessage.replace(/[^\w\s-.,?!]/g, '').trim();
   
-  let prompt = `You are ${cleanAgentName}, a helpful AI assistant`;
+  let prompt = `You are ${cleanAgentName}, a helpful assistant`;
   
   if (cleanPersonality) {
-    prompt += ` with a ${cleanPersonality} communication style`;
+    prompt += ` with a ${cleanPersonality} style`;
   }
   
   if (cleanMood) {
-    prompt += ` and ${cleanMood} demeanor`;
+    prompt += ` and ${cleanMood} approach`;
   }
   
-  prompt += `.\n\nThe user asks: ${userMessage}\n\nPlease respond helpfully and naturally.`;
+  prompt += `.
+
+User message: ${cleanUserMessage}
+
+Please provide a helpful response.`;
   
   return prompt;
 }
 
 /**
- * Validate and clean user message
+ * Validate and clean user message to avoid content filtering
  */
 export function cleanUserMessage(message: string): string {
   // Clean message without removing core content but filtering problematic patterns
