@@ -80,27 +80,39 @@ export function ChatWindow({
     });
 
     try {
-      // Create enhanced AI prompt with internet context if enabled
-      const { prompt: promptText, hasInternetContext, internetSummary } = await createEnhancedChatPrompt({
-        internetEnabled,
-        autoSearch,
-        userMessage,
-        agentName: agent.name,
-        agentPersonality: agent.personality,
-        agentMood: agent.mood
-      });
+      console.log('Starting chat message handling for:', userMessage);
+
+      // Basic validation
+      if (typeof spark === 'undefined') {
+        throw new Error('Spark API is not available');
+      }
+
+      if (!spark.llm || !spark.llmPrompt) {
+        throw new Error('Spark LLM methods are not available');
+      }
+
+      console.log('Creating simple prompt...');
       
-      console.log('Sending prompt to LLM:', { 
-        hasInternetContext, 
-        internetSummary,
-        promptLength: promptText.length 
-      });
+      // Use a very simple approach first
+      const cleanName = agent.name.replace(/[^\w\s-]/g, '').trim() || 'Assistant';
+      const cleanPersonality = agent.personality.replace(/[^\w\s-.,!]/g, '').trim() || 'helpful';
+      const cleanMood = agent.mood.replace(/[^\w\s-]/g, '').trim() || 'neutral';
       
-      // Use spark.llmPrompt with the enhanced prompt text
-      const prompt = spark.llmPrompt`${promptText}`;
+      const simplePrompt = spark.llmPrompt`You are ${cleanName}, an AI with personality: ${cleanPersonality}. Your mood: ${cleanMood}. Respond to: ${userMessage}`;
       
-      // Get AI response
-      const aiResponse = await spark.llm(prompt, selectedModel);
+      console.log('Calling spark.llm...');
+      const aiResponse = await spark.llm(simplePrompt, selectedModel);
+      }
+      
+      console.log('Received AI response:', aiResponse?.substring(0, 100) + '...');
+      
+      if (!aiResponse || typeof aiResponse !== 'string') {
+        throw new Error('Invalid response from AI service');
+      }
+
+      if (aiResponse.length === 0) {
+        throw new Error('Empty response from AI service');
+      }
       
       // Add AI message
       addMessage(agent.id, {
@@ -121,7 +133,25 @@ export function ChatWindow({
       }
     } catch (error) {
       console.error('Error getting AI response:', error);
-      const errorMessage = 'Sorry, I encountered an error. Please try again.';
+      
+      let errorMessage = 'Sorry, I encountered an error processing your message.';
+      
+      if (error instanceof Error) {
+        console.error('Detailed error:', error.message);
+        if (error.stack) {
+          console.error('Error stack:', error.stack);
+        }
+        
+        // Provide more specific error messages
+        if (error.message.includes('Spark API')) {
+          errorMessage = 'AI services are temporarily unavailable. Please try again.';
+        } else if (error.message.includes('Invalid response')) {
+          errorMessage = 'Received an invalid response. Please try rephrasing your message.';
+        } else if (error.message.includes('Empty response')) {
+          errorMessage = 'No response received. Please try again.';
+        }
+      }
+      
       addMessage(agent.id, {
         content: errorMessage,
         sender: 'ai',

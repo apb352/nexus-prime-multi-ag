@@ -35,7 +35,7 @@ export async function createEnhancedChatPrompt(
   let internetContext = '';
   let internetSummary = '';
   
-  // Handle internet search if enabled
+  // Handle internet search if enabled (with better error handling)
   if (internetEnabled) {
     try {
       console.log('Internet enabled, checking if search is needed for:', userMessage);

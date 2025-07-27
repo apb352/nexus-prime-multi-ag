@@ -93,6 +93,18 @@ function App() {
 
       <ThemeSelector />
       
+      {/* Debug section */}
+      <div className="fixed top-4 right-4 bg-card/95 backdrop-blur-md border rounded-lg p-4 text-sm z-[9999]">
+        <div>Spark API Status:</div>
+        <div>{typeof spark !== 'undefined' ? '✅ Available' : '❌ Not Available'}</div>
+        {typeof spark !== 'undefined' && (
+          <div>
+            <div>LLM: {typeof spark.llm === 'function' ? '✅' : '❌'}</div>
+            <div>Prompt: {typeof spark.llmPrompt === 'function' ? '✅' : '❌'}</div>
+          </div>
+        )}
+      </div>
+      
       {/* Main content */}
       <div className="relative z-10">
         <AgentGrid onAgentSelect={handleAgentSelect} />
