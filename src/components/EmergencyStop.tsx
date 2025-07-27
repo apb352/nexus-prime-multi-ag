@@ -26,7 +26,7 @@ export function EmergencyStop({ onStopAll, onStopWindow, activeWindows }: Emerge
         <Button
           variant="destructive"
           size="sm"
-          className="fixed top-4 right-20 z-[10001] shadow-lg bg-red-600 hover:bg-red-700"
+          className="fixed top-4 right-4 z-[10001] shadow-lg bg-red-600 hover:bg-red-700"
           disabled={!hasActiveWindows}
         >
           <StopCircle size={16} className="mr-1" />

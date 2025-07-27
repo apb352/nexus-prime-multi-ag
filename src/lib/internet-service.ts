@@ -148,7 +148,20 @@ class InternetService {
       const duckduckgoUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
       console.log('DuckDuckGo URL:', duckduckgoUrl);
       
-      const response = await fetch(duckduckgoUrl);
+      // Add timeout and better error handling to prevent HTTP2 issues
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(duckduckgoUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; NexusPrime/1.0)'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         throw new Error(`Search API returned ${response.status}: ${response.statusText}`);
@@ -187,14 +200,27 @@ class InternetService {
       // If we still need more results, add some web results
       if (results.length < maxResults) {
         console.log('Getting additional results from Wikipedia...');
-        const additionalResults = await this.searchWithAlternativeAPI(query, maxResults - results.length);
-        results.push(...additionalResults);
+        try {
+          const additionalResults = await this.searchWithAlternativeAPI(query, maxResults - results.length);
+          results.push(...additionalResults);
+        } catch (altError) {
+          console.warn('Alternative search API failed:', altError);
+          // Continue with what we have
+        }
       }
       
       console.log(`Total results: ${results.length}`);
       return results.slice(0, maxResults);
     } catch (error) {
       console.error('DuckDuckGo search failed:', error);
+      
+      // Check for specific error types
+      if (error.name === 'AbortError') {
+        throw new Error('Search request timed out');
+      } else if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connectivity issue during search');
+      }
+      
       throw error;
     }
   }
@@ -327,11 +353,19 @@ class InternetService {
     const weatherUrl = `https://wttr.in/${encodeURIComponent(location)}?format=j1`;
     console.log('Weather URL:', weatherUrl);
     
+    // Add timeout and error handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
     const response = await fetch(weatherUrl, {
       headers: {
-        'User-Agent': 'NexusPrime/1.0 (https://nexusprime.ai)'
-      }
+        'User-Agent': 'NexusPrime/1.0 (https://nexusprime.ai)',
+        'Accept': 'application/json'
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.error(`Weather API response status: ${response.status} ${response.statusText}`);

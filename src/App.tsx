@@ -4,6 +4,8 @@ import { AgentGrid } from '@/components/AgentGrid';
 import { ChatWindow } from '@/components/ChatWindow';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { DebugPanel } from '@/components/DebugPanel';
+import { EmergencyStop } from '@/components/EmergencyStop';
+import { TestFixes } from '@/test-fixes';
 import { useAgents } from '@/hooks/use-agents';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
 
@@ -76,6 +78,19 @@ function App() {
     );
   };
 
+  const handleStopAll = () => {
+    // Close all chat windows
+    setChatWindows([]);
+    // Update all agents to inactive status
+    chatWindows.forEach(window => {
+      updateAgentStatus(window.agentId, false);
+    });
+  };
+
+  const handleStopWindow = (windowId: string) => {
+    handleCloseWindow(windowId);
+  };
+
   const handleUpdateSize = (windowId: string, size: { width: number; height: number }) => {
     setChatWindows((windows) =>
       windows.map(w =>
@@ -95,11 +110,21 @@ function App() {
 
       <ThemeSelector />
       
+      {/* Emergency Stop */}
+      <EmergencyStop
+        onStopAll={handleStopAll}
+        onStopWindow={handleStopWindow}
+        activeWindows={chatWindows.map(w => ({
+          id: w.id,
+          agentName: getAgent(w.agentId)?.name || 'Unknown Agent'
+        }))}
+      />
+      
       {/* Debug toggle - hidden in production */}
       {import.meta.env.DEV && (
         <button
           onClick={() => setShowDebug(!showDebug)}
-          className="fixed top-4 right-20 z-50 bg-primary text-primary-foreground px-2 py-1 rounded text-xs"
+          className="fixed top-4 right-40 z-50 bg-primary text-primary-foreground px-2 py-1 rounded text-xs"
         >
           {showDebug ? 'Hide Debug' : 'Show Debug'}
         </button>
@@ -127,6 +152,13 @@ function App() {
           />
         );
       })}
+      
+      {/* Test fixes component - only in development */}
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <TestFixes />
+        </div>
+      )}
       
       {/* Debug Panel */}
       {showDebug && <DebugPanel />}

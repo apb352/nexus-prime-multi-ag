@@ -186,14 +186,20 @@ export function ChatWindow({
           
           try {
             // Final fallback - ultra-simple prompt
-            const minimalPrompt = spark.llmPrompt`Please respond helpfully to: ${userMessage}`;
+            const minimalPrompt = spark.llmPrompt`Please help with: ${userMessage}`;
             aiResponse = await spark.llm(minimalPrompt, selectedModel);
           } catch (minimalError) {
-            console.log('All prompts failed, trying direct response...', minimalError);
+            console.log('All prompts failed, providing fallback response...', minimalError);
             
-            // Last resort - completely neutral prompt
-            const neutralPrompt = spark.llmPrompt`User says: "${userMessage}". Please provide a helpful response.`;
-            aiResponse = await spark.llm(neutralPrompt, selectedModel);
+            // Check if this is a content filter error
+            const errorMessage = minimalError?.message || String(minimalError);
+            if (errorMessage.includes('content_filter') || errorMessage.includes('content management policy')) {
+              aiResponse = "I apologize, but I'm not able to respond to that particular message due to content guidelines. Could you please rephrase your question?";
+            } else if (errorMessage.includes('HTTP2_PROTOCOL_ERROR') || errorMessage.includes('network')) {
+              aiResponse = "I'm experiencing a temporary connection issue. Please try again in a moment.";
+            } else {
+              aiResponse = "I'm sorry, I'm having trouble responding right now. Please try rephrasing your message or try again later.";
+            }
           }
         }
       }
@@ -245,6 +251,10 @@ export function ChatWindow({
         // Provide more specific error messages
         if (error.message.includes('content_filter') || error.message.includes('ResponsibleAIPolicyViolation')) {
           errorMessage = 'I apologize, but I cannot process that request due to content policies. Please try rephrasing your message in a different way.';
+        } else if (error.message.includes('HTTP2_PROTOCOL_ERROR') || error.message.includes('net::ERR_HTTP2_PROTOCOL_ERROR')) {
+          errorMessage = 'Connection error detected. Please try again in a moment.';
+        } else if (error.message.includes('Failed to load resource')) {
+          errorMessage = 'Network connectivity issue. Please check your connection and try again.';
         } else if (error.message.includes('Spark API')) {
           errorMessage = 'AI services are temporarily unavailable. Please try again in a moment.';
         } else if (error.message.includes('Invalid response')) {
