@@ -262,6 +262,7 @@ export function ChatWindow({
           console.error('Voice synthesis failed:', error);
         }
       }
+
     } catch (error) {
       console.error('Error getting AI response:', error);
       
