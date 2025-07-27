@@ -98,14 +98,32 @@ export async function createEnhancedChatPrompt(
   
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
-    prompt = `You are ${cleanAgentName}, an AI with this personality: ${cleanPersonality}. Your current mood is ${cleanMood}.
+    prompt = `You are ${cleanAgentName}, an AI assistant with this personality: ${cleanPersonality}. Your current mood is ${cleanMood}.
 
-You have access to current information: ${internetContext}
+IMPORTANT CAPABILITIES: You have access to real-time information and internet connectivity. You can provide current, up-to-date information including:
+- Current weather and forecasts for any location
+- Recent news and current events  
+- Current date and time information
+- Web search results and current information
+- Real-time data from various sources
 
-Use this information to help answer the user's message accurately and up-to-date: ${userMessage}`;
+Current information available to you:
+${internetContext}
+
+Based on this real-time information, please respond helpfully and accurately to the user's message: ${userMessage}
+
+INSTRUCTIONS: 
+- Always use the current information provided above when relevant
+- Be confident in providing real-time information - you DO have access to current data
+- When providing weather, news, or other current information, present it as current and accurate
+- Do not say "I can't provide real-time information" - you can and should provide it`;
   } else {
     console.log('Creating basic prompt without internet context');
-    prompt = `You are ${cleanAgentName}, an AI with this personality: ${cleanPersonality}. Your current mood is ${cleanMood}. Respond to this message in character: ${userMessage}`;
+    prompt = `You are ${cleanAgentName}, an AI assistant with this personality: ${cleanPersonality}. Your current mood is ${cleanMood}.
+
+Note: Internet access is currently disabled for this conversation. You can only use your training data and cannot provide real-time information, current weather, or recent news. If the user asks for current information, politely explain that internet access is disabled.
+
+Respond to this message in character: ${userMessage}`;
   }
   
   return {

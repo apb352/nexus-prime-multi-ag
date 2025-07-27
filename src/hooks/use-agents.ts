@@ -17,8 +17,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.explorer
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -39,8 +39,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.creative
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -61,8 +61,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.analytical
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -83,8 +83,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.companion
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -105,8 +105,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.philosopher
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -127,8 +127,8 @@ const DEFAULT_AGENTS: AIAgent[] = [
       profile: VOICE_PROFILES.mentor
     },
     internetSettings: {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],
@@ -149,8 +149,8 @@ export function useAgents() {
       profile: VOICE_PROFILES.analytical
     },
     internetSettings: agent.internetSettings || {
-      enabled: false,
-      autoSearch: false,
+      enabled: true,
+      autoSearch: true,
       maxResults: 5,
       safeSearch: true,
       allowedDomains: [],

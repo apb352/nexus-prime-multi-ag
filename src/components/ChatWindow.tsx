@@ -81,6 +81,7 @@ export function ChatWindow({
 
     try {
       console.log('Starting chat message handling for:', userMessage);
+      console.log('Internet enabled:', internetEnabled, 'Auto search:', autoSearch);
 
       // Basic validation
       if (typeof spark === 'undefined') {
@@ -91,25 +92,40 @@ export function ChatWindow({
         throw new Error('Spark LLM methods are not available');
       }
 
-      console.log('Creating simple prompt...');
+      console.log('Creating enhanced prompt with internet capabilities...');
       
-      // Use a very simple approach first
-      const cleanName = agent.name.replace(/[^\w\s-]/g, '').trim() || 'Assistant';
-      const cleanPersonality = agent.personality.replace(/[^\w\s-.,!]/g, '').trim() || 'helpful';
-      const cleanMood = agent.mood.replace(/[^\w\s-]/g, '').trim() || 'neutral';
+      // Create enhanced prompt with internet context
+      const promptResult = await createEnhancedChatPrompt({
+        internetEnabled,
+        autoSearch,
+        userMessage,
+        agentName: agent.name,
+        agentPersonality: agent.personality,
+        agentMood: agent.mood
+      });
       
-      const simplePrompt = spark.llmPrompt`You are ${cleanName}, an AI with personality: ${cleanPersonality}. Your mood: ${cleanMood}. Respond to: ${userMessage}`;
+      console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
+      console.log('Internet summary:', promptResult.internetSummary);
+      console.log('Final prompt preview:', promptResult.prompt.substring(0, 200) + '...');
       
-      console.log('Calling spark.llm...');
-      const aiResponse = await spark.llm(simplePrompt, selectedModel);
+      // Create the spark prompt properly
+      const finalPrompt = spark.llmPrompt`${promptResult.prompt}`;
       
-      console.log('Received AI response:', aiResponse?.substring(0, 100) + '...');
+      // Use the prompt directly since it's already formatted
+      console.log('Calling spark.llm with model:', selectedModel);
+      const aiResponse = await spark.llm(finalPrompt, selectedModel);
+      
+      console.log('Received AI response type:', typeof aiResponse);
+      console.log('AI response length:', aiResponse?.length || 0);
+      console.log('AI response preview:', aiResponse?.substring(0, 100) + '...');
       
       if (!aiResponse || typeof aiResponse !== 'string') {
+        console.error('Invalid response type received:', typeof aiResponse);
         throw new Error('Invalid response from AI service');
       }
 
       if (aiResponse.length === 0) {
+        console.error('Empty response received');
         throw new Error('Empty response from AI service');
       }
       
@@ -119,6 +135,8 @@ export function ChatWindow({
         sender: 'ai',
         agentId: agent.id
       });
+
+      console.log('AI message added successfully');
 
       // Auto-speak the AI response if enabled
       if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
@@ -148,6 +166,10 @@ export function ChatWindow({
           errorMessage = 'Received an invalid response. Please try rephrasing your message.';
         } else if (error.message.includes('Empty response')) {
           errorMessage = 'No response received. Please try again.';
+        } else if (error.message.includes('Weather service')) {
+          errorMessage = 'Weather service is temporarily unavailable, but I can still help with other questions.';
+        } else if (error.message.includes('Internet')) {
+          errorMessage = 'Internet services are experiencing issues, but I can still help with general questions.';
         }
       }
       
