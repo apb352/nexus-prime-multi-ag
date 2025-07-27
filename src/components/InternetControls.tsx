@@ -49,7 +49,8 @@ export function InternetControls({
     // Update agent settings
     const agent = getAgent(agentId);
     if (agent) {
-      updateAgent(agentId, {
+      updateAgent({
+        ...agent,
         internetSettings: {
           ...settings,
           enabled: newEnabled
@@ -65,7 +66,8 @@ export function InternetControls({
     // Update agent settings
     const agent = getAgent(agentId);
     if (agent) {
-      updateAgent(agentId, {
+      updateAgent({
+        ...agent,
         internetSettings: {
           ...settings,
           autoSearch: newAutoSearch
@@ -81,7 +83,8 @@ export function InternetControls({
     // Update agent and service settings
     const agent = getAgent(agentId);
     if (agent) {
-      updateAgent(agentId, {
+      updateAgent({
+        ...agent,
         internetSettings: newSettings
       });
     }

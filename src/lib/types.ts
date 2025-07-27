@@ -1,4 +1,5 @@
 import { VoiceSettings } from './voice-service';
+import { InternetSettings } from './internet-service';
 
 export interface AIAgent {
   id: string;
@@ -9,6 +10,7 @@ export interface AIAgent {
   color: string;
   isActive: boolean;
   voiceSettings?: VoiceSettings;
+  internetSettings?: InternetSettings;
 }
 
 export interface ChatMessage {
@@ -28,6 +30,8 @@ export interface ChatWindow {
   selectedModel: string;
   voiceEnabled: boolean;
   autoSpeak: boolean;
+  internetEnabled?: boolean;
+  autoSearch?: boolean;
 }
 
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';

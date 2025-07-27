@@ -9,7 +9,9 @@ import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
+import { InternetControls } from './InternetControls';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
+import { createEnhancedChatPrompt } from '@/lib/chat-utils';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -40,6 +42,14 @@ export function ChatWindow({
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [zIndex, setZIndex] = useState(1500);
+  const [internetEnabled, setInternetEnabled] = useState(agent.internetSettings?.enabled ?? false);
+  const [autoSearch, setAutoSearch] = useState(agent.internetSettings?.autoSearch ?? false);
+  
+  // Update internet settings when agent changes
+  useEffect(() => {
+    setInternetEnabled(agent.internetSettings?.enabled ?? false);
+    setAutoSearch(agent.internetSettings?.autoSearch ?? false);
+  }, [agent.internetSettings]);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -70,8 +80,24 @@ export function ChatWindow({
     });
 
     try {
-      // Create AI prompt using spark.llmPrompt
-      const prompt = spark.llmPrompt`You are ${agent.name}, an AI with the following personality: ${agent.personality}. Your current mood is ${agent.mood}. Respond to this message in character: ${userMessage}`;
+      // Create enhanced AI prompt with internet context if enabled
+      const { prompt: promptText, hasInternetContext, internetSummary } = await createEnhancedChatPrompt({
+        internetEnabled,
+        autoSearch,
+        userMessage,
+        agentName: agent.name,
+        agentPersonality: agent.personality,
+        agentMood: agent.mood
+      });
+      
+      console.log('Sending prompt to LLM:', { 
+        hasInternetContext, 
+        internetSummary,
+        promptLength: promptText.length 
+      });
+      
+      // Use spark.llmPrompt with the enhanced prompt text
+      const prompt = spark.llmPrompt`${promptText}`;
       
       // Get AI response
       const aiResponse = await spark.llm(prompt, selectedModel);
@@ -194,6 +220,14 @@ export function ChatWindow({
     }
   };
 
+  const handleInternetToggle = (enabled: boolean) => {
+    setInternetEnabled(enabled);
+  };
+
+  const handleAutoSearchToggle = (enabled: boolean) => {
+    setAutoSearch(enabled);
+  };
+
   if (window.isMinimized) {
     return (
       <div
@@ -274,6 +308,15 @@ export function ChatWindow({
             onVoiceSettingsChange={handleVoiceSettingsChange}
             onSpeak={handleSpeakMessage}
             className="mr-2"
+          />
+          
+          <InternetControls
+            agentId={agent.id}
+            windowId={window.id}
+            internetEnabled={internetEnabled}
+            autoSearch={autoSearch}
+            onInternetToggle={handleInternetToggle}
+            onAutoSearchToggle={handleAutoSearchToggle}
           />
           
           <Button

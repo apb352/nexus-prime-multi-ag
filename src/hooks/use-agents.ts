@@ -15,6 +15,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.explorer
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   },
   {
@@ -29,6 +37,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.creative
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   },
   {
@@ -43,6 +59,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.analytical
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   },
   {
@@ -57,6 +81,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.companion
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   },
   {
@@ -71,6 +103,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.philosopher
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   },
   {
@@ -85,6 +125,14 @@ const DEFAULT_AGENTS: AIAgent[] = [
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.mentor
+    },
+    internetSettings: {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   }
 ];
@@ -92,13 +140,21 @@ const DEFAULT_AGENTS: AIAgent[] = [
 export function useAgents() {
   const [agents, setAgents] = useKV<AIAgent[]>('nexus-agents', DEFAULT_AGENTS);
 
-  // Ensure all agents have proper voice settings
+  // Ensure all agents have proper voice settings and internet settings
   const normalizedAgents = agents.map(agent => ({
     ...agent,
     voiceSettings: agent.voiceSettings || {
       enabled: true,
       autoSpeak: false,
       profile: VOICE_PROFILES.analytical
+    },
+    internetSettings: agent.internetSettings || {
+      enabled: false,
+      autoSearch: false,
+      maxResults: 5,
+      safeSearch: true,
+      allowedDomains: [],
+      blockedDomains: []
     }
   }));
 
