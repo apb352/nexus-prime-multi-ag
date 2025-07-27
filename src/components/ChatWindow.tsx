@@ -102,7 +102,6 @@ export function ChatWindow({
       
       console.log('Calling spark.llm...');
       const aiResponse = await spark.llm(simplePrompt, selectedModel);
-      }
       
       console.log('Received AI response:', aiResponse?.substring(0, 100) + '...');
       
