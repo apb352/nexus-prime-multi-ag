@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, Minus, Send, Settings } from '@phosphor-icons/react';
 import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
+import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
+import { VoiceControls } from './VoiceControls';
+import { voiceService } from '@/lib/voice-service';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -42,6 +45,7 @@ export function ChatWindow({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { addMessage, getAgentHistory } = useChatHistory();
+  const { updateAgent } = useAgents();
   const messages = getAgentHistory(agent.id);
 
   useEffect(() => {
@@ -77,13 +81,32 @@ export function ChatWindow({
         sender: 'ai',
         agentId: agent.id
       });
+
+      // Auto-speak the AI response if enabled
+      if (agent.voiceSettings.enabled && agent.voiceSettings.autoSpeak) {
+        try {
+          await voiceService.speak(aiResponse, agent.voiceSettings.profile);
+        } catch (error) {
+          console.error('Voice synthesis failed:', error);
+        }
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
+      const errorMessage = 'Sorry, I encountered an error. Please try again.';
       addMessage(agent.id, {
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: errorMessage,
         sender: 'ai',
         agentId: agent.id
       });
+
+      // Speak error message if voice is enabled
+      if (agent.voiceSettings.enabled && agent.voiceSettings.autoSpeak) {
+        try {
+          await voiceService.speak(errorMessage, agent.voiceSettings.profile);
+        } catch (voiceError) {
+          console.error('Voice synthesis failed:', voiceError);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +154,21 @@ export function ChatWindow({
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition]);
+
+  const handleVoiceSettingsChange = (newVoiceSettings: typeof agent.voiceSettings) => {
+    updateAgent({
+      ...agent,
+      voiceSettings: newVoiceSettings
+    });
+  };
+
+  const handleSpeakMessage = async (text: string) => {
+    try {
+      await voiceService.speak(text, agent.voiceSettings.profile);
+    } catch (error) {
+      console.error('Voice synthesis failed:', error);
+    }
+  };
 
   if (window.isMinimized) {
     return (
@@ -193,6 +231,13 @@ export function ChatWindow({
         </div>
         
         <div className="flex items-center space-x-2">
+          <VoiceControls
+            voiceSettings={agent.voiceSettings}
+            onVoiceSettingsChange={handleVoiceSettingsChange}
+            onSpeak={handleSpeakMessage}
+            className="mr-2"
+          />
+          
           <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />

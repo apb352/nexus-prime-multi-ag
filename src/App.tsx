@@ -36,7 +36,9 @@ function App() {
       },
       size: { width: 400, height: 600 },
       isMinimized: false,
-      selectedModel: 'gpt-4o'
+      selectedModel: 'gpt-4o',
+      voiceEnabled: agent.voiceSettings.enabled,
+      autoSpeak: agent.voiceSettings.autoSpeak
     };
 
     setChatWindows((windows) => [...windows, newWindow]);

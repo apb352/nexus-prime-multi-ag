@@ -1,3 +1,5 @@
+import { VoiceSettings } from './voice-service';
+
 export interface AIAgent {
   id: string;
   name: string;
@@ -6,6 +8,7 @@ export interface AIAgent {
   personality: string;
   color: string;
   isActive: boolean;
+  voiceSettings: VoiceSettings;
 }
 
 export interface ChatMessage {
@@ -23,6 +26,8 @@ export interface ChatWindow {
   size: { width: number; height: number };
   isMinimized: boolean;
   selectedModel: string;
+  voiceEnabled: boolean;
+  autoSpeak: boolean;
 }
 
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';
