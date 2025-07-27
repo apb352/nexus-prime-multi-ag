@@ -119,21 +119,7 @@ export function useAgents() {
   };
 
   const getAgent = (agentId: string): AIAgent | undefined => {
-    const agent = normalizedAgents.find(agent => agent.id === agentId);
-    
-    // Ensure agent has voiceSettings if it doesn't already
-    if (agent && !agent.voiceSettings) {
-      return {
-        ...agent,
-        voiceSettings: {
-          enabled: true,
-          autoSpeak: false,
-          profile: VOICE_PROFILES.analytical
-        }
-      };
-    }
-    
-    return agent;
+    return normalizedAgents.find(agent => agent.id === agentId);
   };
 
   return {

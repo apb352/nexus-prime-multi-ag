@@ -8,7 +8,7 @@ import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
 
 function App() {
   const [chatWindows, setChatWindows] = useKV<ChatWindowType[]>('nexus-chat-windows', []);
-  const { agents, updateAgentStatus, getAgent } = useAgents();
+  const { agents, updateAgentStatus, updateAgent, getAgent } = useAgents();
 
   const handleAgentSelect = (agent: AIAgent) => {
     // Check if window already exists

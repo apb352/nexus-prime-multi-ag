@@ -118,15 +118,25 @@ body {
 
 /* Ensure popovers appear above chat windows */
 [data-radix-popper-content-wrapper] {
-  z-index: 2100 !important;
+  z-index: 2500 !important;
 }
 
 [data-radix-select-content] {
-  z-index: 2100 !important;
+  z-index: 2500 !important;
 }
 
 [data-radix-popover-content] {
-  z-index: 2100 !important;
+  z-index: 2500 !important;
+}
+
+/* Additional specificity for voice controls popover */
+.voice-settings-popover {
+  z-index: 2500 !important;
+}
+
+/* Ensure all radix portals are above chat windows */
+[data-radix-portal] {
+  z-index: 2500 !important;
 }
 
 /* Custom animations for Nexus Prime */

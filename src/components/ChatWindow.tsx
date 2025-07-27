@@ -260,7 +260,7 @@ export function ChatWindow({
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="z-[2100]">
+            <SelectContent className="z-[2500]">
               {AI_MODELS.map((model) => (
                 <SelectItem key={model.value} value={model.value}>
                   {model.label}

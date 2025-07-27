@@ -140,7 +140,15 @@ export function VoiceControls({
               <Gear size={16} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-4 z-[2100]" align="end" side="bottom" sideOffset={5}>
+          <PopoverContent 
+            className="w-80 p-4 voice-settings-popover !z-[2500]" 
+            align="end" 
+            side="bottom" 
+            sideOffset={5}
+            avoidCollisions={true}
+            collisionPadding={20}
+            style={{ zIndex: 2500 }}
+          >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Voice Settings</h4>
@@ -182,7 +190,7 @@ export function VoiceControls({
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="z-[2100]">
+                  <SelectContent className="z-[2500]">
                     {Object.entries(VOICE_PROFILES).map(([key, profile]) => (
                       <SelectItem key={key} value={key}>
                         {profile.name}
