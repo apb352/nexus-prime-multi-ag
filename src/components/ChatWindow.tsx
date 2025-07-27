@@ -9,7 +9,7 @@ import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
-import { voiceService } from '@/lib/voice-service';
+import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -83,9 +83,11 @@ export function ChatWindow({
       });
 
       // Auto-speak the AI response if enabled
-      if (agent.voiceSettings.enabled && agent.voiceSettings.autoSpeak) {
+      if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
         try {
-          await voiceService.speak(aiResponse, agent.voiceSettings.profile);
+          if (agent.voiceSettings?.profile) {
+            await voiceService.speak(aiResponse, agent.voiceSettings.profile);
+          }
         } catch (error) {
           console.error('Voice synthesis failed:', error);
         }
@@ -100,9 +102,11 @@ export function ChatWindow({
       });
 
       // Speak error message if voice is enabled
-      if (agent.voiceSettings.enabled && agent.voiceSettings.autoSpeak) {
+      if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
         try {
-          await voiceService.speak(errorMessage, agent.voiceSettings.profile);
+          if (agent.voiceSettings?.profile) {
+            await voiceService.speak(errorMessage, agent.voiceSettings.profile);
+          }
         } catch (voiceError) {
           console.error('Voice synthesis failed:', voiceError);
         }
@@ -155,7 +159,7 @@ export function ChatWindow({
     };
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition]);
 
-  const handleVoiceSettingsChange = (newVoiceSettings: typeof agent.voiceSettings) => {
+  const handleVoiceSettingsChange = (newVoiceSettings: VoiceSettings) => {
     updateAgent({
       ...agent,
       voiceSettings: newVoiceSettings
@@ -164,7 +168,9 @@ export function ChatWindow({
 
   const handleSpeakMessage = async (text: string) => {
     try {
-      await voiceService.speak(text, agent.voiceSettings.profile);
+      if (agent.voiceSettings?.profile) {
+        await voiceService.speak(text, agent.voiceSettings.profile);
+      }
     } catch (error) {
       console.error('Voice synthesis failed:', error);
     }

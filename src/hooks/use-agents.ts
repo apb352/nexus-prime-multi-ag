@@ -92,6 +92,16 @@ const DEFAULT_AGENTS: AIAgent[] = [
 export function useAgents() {
   const [agents, setAgents] = useKV<AIAgent[]>('nexus-agents', DEFAULT_AGENTS);
 
+  // Ensure all agents have proper voice settings
+  const normalizedAgents = agents.map(agent => ({
+    ...agent,
+    voiceSettings: agent.voiceSettings || {
+      enabled: true,
+      autoSpeak: false,
+      profile: VOICE_PROFILES.analytical
+    }
+  }));
+
   const updateAgentStatus = (agentId: string, isActive: boolean) => {
     setAgents((currentAgents) =>
       currentAgents.map(agent =>
@@ -108,12 +118,26 @@ export function useAgents() {
     );
   };
 
-  const getAgent = (agentId: string) => {
-    return agents.find(agent => agent.id === agentId);
+  const getAgent = (agentId: string): AIAgent | undefined => {
+    const agent = normalizedAgents.find(agent => agent.id === agentId);
+    
+    // Ensure agent has voiceSettings if it doesn't already
+    if (agent && !agent.voiceSettings) {
+      return {
+        ...agent,
+        voiceSettings: {
+          enabled: true,
+          autoSpeak: false,
+          profile: VOICE_PROFILES.analytical
+        }
+      };
+    }
+    
+    return agent;
   };
 
   return {
-    agents,
+    agents: normalizedAgents,
     updateAgentStatus,
     updateAgent,
     getAgent

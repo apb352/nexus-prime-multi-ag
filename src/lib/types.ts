@@ -8,7 +8,7 @@ export interface AIAgent {
   personality: string;
   color: string;
   isActive: boolean;
-  voiceSettings: VoiceSettings;
+  voiceSettings?: VoiceSettings;
 }
 
 export interface ChatMessage {
