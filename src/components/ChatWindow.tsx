@@ -39,6 +39,7 @@ export function ChatWindow({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [zIndex, setZIndex] = useState(1500);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -116,13 +117,17 @@ export function ChatWindow({
     }
   };
 
+  const handleWindowClick = () => {
+    // Bring window to front
+    setZIndex(1500 + Date.now() % 1000);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setIsDragging(true);
@@ -145,8 +150,8 @@ export function ChatWindow({
       if (isResizing) {
         const rect = windowRef.current?.getBoundingClientRect();
         if (rect) {
-          const newWidth = Math.max(300, e.clientX - rect.left);
-          const newHeight = Math.max(400, e.clientY - rect.top);
+          const newWidth = Math.max(300, e.clientX - window.position.x);
+          const newHeight = Math.max(400, e.clientY - window.position.y);
           onUpdateSize(window.id, {
             width: newWidth,
             height: newHeight
@@ -172,10 +177,11 @@ export function ChatWindow({
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
 
   const handleVoiceSettingsChange = (newVoiceSettings: VoiceSettings) => {
-    updateAgent({
+    const updatedAgent = {
       ...agent,
       voiceSettings: newVoiceSettings
-    });
+    };
+    updateAgent(updatedAgent);
   };
 
   const handleSpeakMessage = async (text: string) => {
@@ -224,8 +230,9 @@ export function ChatWindow({
         height: window.size.height,
         borderColor: agent.color,
         boxShadow: `0 0 30px ${agent.color}30`,
-        zIndex: 1000
+        zIndex: zIndex
       }}
+      onClick={handleWindowClick}
     >
       {/* Header */}
       <div
@@ -249,18 +256,11 @@ export function ChatWindow({
         </div>
         
         <div className="flex items-center space-x-2">
-          <VoiceControls
-            voiceSettings={agent.voiceSettings}
-            onVoiceSettingsChange={handleVoiceSettingsChange}
-            onSpeak={handleSpeakMessage}
-            className="mr-2"
-          />
-          
           <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="z-[2000]">
+            <SelectContent className="z-[2100]">
               {AI_MODELS.map((model) => (
                 <SelectItem key={model.value} value={model.value}>
                   {model.label}
@@ -268,6 +268,13 @@ export function ChatWindow({
               ))}
             </SelectContent>
           </Select>
+          
+          <VoiceControls
+            voiceSettings={agent.voiceSettings}
+            onVoiceSettingsChange={handleVoiceSettingsChange}
+            onSpeak={handleSpeakMessage}
+            className="mr-2"
+          />
           
           <Button
             variant="ghost"
@@ -361,9 +368,10 @@ export function ChatWindow({
 
       {/* Resize handle */}
       <div
-        className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-transparent hover:bg-border/50 transition-colors"
+        className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
         onMouseDown={(e) => {
           e.stopPropagation();
+          e.preventDefault();
           setIsResizing(true);
         }}
       >

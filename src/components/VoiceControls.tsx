@@ -26,55 +26,57 @@ export function VoiceControls({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [testText] = useState("Hello! This is how I sound with the current voice settings.");
 
-  // Early return if voiceSettings is not provided
-  if (!voiceSettings) {
-    return null;
-  }
+  // Provide default voice settings if not provided
+  const currentVoiceSettings = voiceSettings || {
+    enabled: false,
+    autoSpeak: false,
+    profile: VOICE_PROFILES.analytical
+  };
 
   useEffect(() => {
     voiceService.ensureInitialized();
   }, []);
 
   const handleEnabledChange = (enabled: boolean) => {
-    if (!voiceSettings) return;
-    onVoiceSettingsChange({
-      ...voiceSettings,
+    const newSettings = {
+      ...currentVoiceSettings,
       enabled
-    });
+    };
+    onVoiceSettingsChange(newSettings);
   };
 
   const handleAutoSpeakChange = (autoSpeak: boolean) => {
-    if (!voiceSettings) return;
-    onVoiceSettingsChange({
-      ...voiceSettings,
+    const newSettings = {
+      ...currentVoiceSettings,
       autoSpeak
-    });
+    };
+    onVoiceSettingsChange(newSettings);
   };
 
   const handleProfileChange = (profileKey: string) => {
-    if (!voiceSettings) return;
     const profile = VOICE_PROFILES[profileKey];
     if (profile) {
-      onVoiceSettingsChange({
-        ...voiceSettings,
+      const newSettings = {
+        ...currentVoiceSettings,
         profile
-      });
+      };
+      onVoiceSettingsChange(newSettings);
     }
   };
 
   const handleProfileSettingChange = (key: keyof VoiceProfile, value: number | string) => {
-    if (!voiceSettings?.profile) return;
-    onVoiceSettingsChange({
-      ...voiceSettings,
+    if (!currentVoiceSettings.profile) return;
+    const newSettings = {
+      ...currentVoiceSettings,
       profile: {
-        ...voiceSettings.profile,
+        ...currentVoiceSettings.profile,
         [key]: value
       }
-    });
+    };
+    onVoiceSettingsChange(newSettings);
   };
 
   const handleTestVoice = async () => {
-    if (!voiceSettings) return;
     if (isSpeaking) {
       voiceService.stop();
       setIsSpeaking(false);
@@ -83,8 +85,8 @@ export function VoiceControls({
 
     try {
       setIsSpeaking(true);
-      if (voiceSettings?.profile) {
-        await voiceService.speak(testText, voiceSettings.profile);
+      if (currentVoiceSettings.profile) {
+        await voiceService.speak(testText, currentVoiceSettings.profile);
       }
     } catch (error) {
       console.error('Voice test failed:', error);
@@ -107,14 +109,14 @@ export function VoiceControls({
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => handleEnabledChange(!voiceSettings?.enabled)}
-        className={`p-2 ${voiceSettings?.enabled ? 'text-primary' : 'text-muted-foreground'}`}
+        onClick={() => handleEnabledChange(!currentVoiceSettings.enabled)}
+        className={`p-2 ${currentVoiceSettings.enabled ? 'text-primary' : 'text-muted-foreground'}`}
       >
-        {voiceSettings?.enabled ? <SpeakerHigh size={16} /> : <SpeakerX size={16} />}
+        {currentVoiceSettings.enabled ? <SpeakerHigh size={16} /> : <SpeakerX size={16} />}
       </Button>
 
       {/* Quick speak button */}
-      {voiceSettings?.enabled && (
+      {currentVoiceSettings.enabled && (
         <Button
           variant="ghost"
           size="sm"
@@ -127,14 +129,18 @@ export function VoiceControls({
       )}
 
       {/* Voice settings popover */}
-      {voiceSettings?.enabled && (
+      {currentVoiceSettings.enabled && (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="p-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`p-2 ${currentVoiceSettings.enabled ? 'text-primary hover:text-primary' : 'text-muted-foreground'}`}
+            >
               <Gear size={16} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-4 z-[2000]" align="end">
+          <PopoverContent className="w-80 p-4 z-[2100]" align="end" side="bottom" sideOffset={5}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Voice Settings</h4>
@@ -157,7 +163,7 @@ export function VoiceControls({
                 </Label>
                 <Switch
                   id="auto-speak"
-                  checked={voiceSettings?.autoSpeak ?? false}
+                  checked={currentVoiceSettings.autoSpeak ?? false}
                   onCheckedChange={handleAutoSpeakChange}
                 />
               </div>
@@ -169,7 +175,7 @@ export function VoiceControls({
                 <Label className="text-sm">Voice Profile</Label>
                 <Select
                   value={Object.keys(VOICE_PROFILES).find(
-                    key => VOICE_PROFILES[key].name === voiceSettings?.profile?.name
+                    key => VOICE_PROFILES[key].name === currentVoiceSettings.profile?.name
                   ) || 'analytical'}
                   onValueChange={handleProfileChange}
                 >
@@ -195,11 +201,11 @@ export function VoiceControls({
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Pitch</Label>
                       <span className="text-xs text-muted-foreground">
-                        {voiceSettings?.profile?.pitch?.toFixed(1) ?? '1.0'}
+                        {currentVoiceSettings.profile?.pitch?.toFixed(1) ?? '1.0'}
                       </span>
                     </div>
                     <Slider
-                      value={[voiceSettings?.profile?.pitch ?? 1]}
+                      value={[currentVoiceSettings.profile?.pitch ?? 1]}
                       onValueChange={([value]) => handleProfileSettingChange('pitch', value)}
                       min={0.1}
                       max={2}
@@ -212,11 +218,11 @@ export function VoiceControls({
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Speed</Label>
                       <span className="text-xs text-muted-foreground">
-                        {voiceSettings?.profile?.rate?.toFixed(1) ?? '1.0'}
+                        {currentVoiceSettings.profile?.rate?.toFixed(1) ?? '1.0'}
                       </span>
                     </div>
                     <Slider
-                      value={[voiceSettings?.profile?.rate ?? 1]}
+                      value={[currentVoiceSettings.profile?.rate ?? 1]}
                       onValueChange={([value]) => handleProfileSettingChange('rate', value)}
                       min={0.1}
                       max={3}
@@ -229,11 +235,11 @@ export function VoiceControls({
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Volume</Label>
                       <span className="text-xs text-muted-foreground">
-                        {Math.round((voiceSettings?.profile?.volume ?? 1) * 100)}%
+                        {Math.round((currentVoiceSettings.profile?.volume ?? 1) * 100)}%
                       </span>
                     </div>
                     <Slider
-                      value={[voiceSettings?.profile?.volume ?? 1]}
+                      value={[currentVoiceSettings.profile?.volume ?? 1]}
                       onValueChange={([value]) => handleProfileSettingChange('volume', value)}
                       min={0}
                       max={1}

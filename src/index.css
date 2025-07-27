@@ -118,11 +118,15 @@ body {
 
 /* Ensure popovers appear above chat windows */
 [data-radix-popper-content-wrapper] {
-  z-index: 2000 !important;
+  z-index: 2100 !important;
 }
 
 [data-radix-select-content] {
-  z-index: 2000 !important;
+  z-index: 2100 !important;
+}
+
+[data-radix-popover-content] {
+  z-index: 2100 !important;
 }
 
 /* Custom animations for Nexus Prime */
