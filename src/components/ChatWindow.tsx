@@ -175,36 +175,59 @@ export function ChatWindow({
       } catch (enhancedError) {
         console.log('Enhanced prompt failed, trying basic prompt...', enhancedError);
         
-        try {
-          // Try basic prompt with agent personality
-          const basicPromptText = createBasicChatPrompt(userMessage, agent.name, agent.personality, agent.mood);
-          const basicPrompt = spark.llmPrompt`${basicPromptText}`;
-          aiResponse = await spark.llm(basicPrompt, selectedModel);
-          
-        } catch (basicError) {
-          console.log('Basic prompt failed, trying minimal prompt...', basicError);
-          
+        // Check if it's a content filter error immediately
+        const enhancedErrorMessage = enhancedError?.message || String(enhancedError);
+        if (enhancedErrorMessage.includes('content_filter') || 
+            enhancedErrorMessage.includes('content management policy') || 
+            enhancedErrorMessage.includes('ResponsibleAIPolicyViolation') ||
+            enhancedErrorMessage.includes('jailbreak') ||
+            enhancedErrorMessage.includes('filtered')) {
+          aiResponse = "I understand you'd like to chat, but I need to keep our conversation within certain guidelines. Could you please rephrase your message in a different way? I'm here to help with information, creative tasks, and friendly conversation!";
+        } else {
           try {
-            // Final fallback - ultra-simple prompt
-            const minimalPrompt = spark.llmPrompt`Please help with: ${userMessage}`;
-            aiResponse = await spark.llm(minimalPrompt, selectedModel);
-          } catch (minimalError) {
-            console.log('All prompts failed, providing fallback response...', minimalError);
+            // Try basic prompt with agent personality
+            const basicPromptText = createBasicChatPrompt(userMessage, agent.name, agent.personality, agent.mood);
+            const basicPrompt = spark.llmPrompt`${basicPromptText}`;
+            aiResponse = await spark.llm(basicPrompt, selectedModel);
             
-            // Check if this is a content filter error
-            const errorMessage = minimalError?.message || String(minimalError);
-            if (errorMessage.includes('content_filter') || errorMessage.includes('content management policy') || errorMessage.includes('ResponsibleAIPolicyViolation')) {
-              aiResponse = "I understand you'd like to chat, but I need to keep our conversation within certain guidelines. Could you please rephrase your message? I'm here to help with information, creative tasks, and friendly conversation!";
-            } else if (errorMessage.includes('HTTP2_PROTOCOL_ERROR') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
-              aiResponse = "I'm having a brief connection hiccup. Let me try that again - could you please resend your message?";
-            } else if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
-              aiResponse = "I encountered an issue processing that request. Could you try rephrasing your message differently?";
+          } catch (basicError) {
+            console.log('Basic prompt failed, trying minimal prompt...', basicError);
+            
+            // Check for content filter error on basic prompt too
+            const basicErrorMessage = basicError?.message || String(basicError);
+            if (basicErrorMessage.includes('content_filter') || 
+                basicErrorMessage.includes('content management policy') || 
+                basicErrorMessage.includes('ResponsibleAIPolicyViolation') ||
+                basicErrorMessage.includes('jailbreak') ||
+                basicErrorMessage.includes('filtered')) {
+              aiResponse = "I understand you'd like to chat, but I need to keep our conversation within certain guidelines. Could you please rephrase your message in a different way? I'm here to help with information, creative tasks, and friendly conversation!";
             } else {
-              aiResponse = "I'm sorry, I'm having trouble responding right now. Please try rephrasing your message or try again later.";
+              try {
+                // Final fallback - ultra-simple prompt
+                const minimalPrompt = spark.llmPrompt`Please help with: ${userMessage}`;
+                aiResponse = await spark.llm(minimalPrompt, selectedModel);
+              } catch (minimalError) {
+                console.log('All prompts failed, providing fallback response...', minimalError);
+                
+                // Check if this is a content filter error
+                const errorMessage = minimalError?.message || String(minimalError);
+                if (errorMessage.includes('content_filter') || 
+                    errorMessage.includes('content management policy') || 
+                    errorMessage.includes('ResponsibleAIPolicyViolation') ||
+                    errorMessage.includes('jailbreak') ||
+                    errorMessage.includes('filtered')) {
+                  aiResponse = "I understand you'd like to chat, but I need to keep our conversation within certain guidelines. Could you please rephrase your message in a different way? I'm here to help with information, creative tasks, and friendly conversation!";
+                } else if (errorMessage.includes('HTTP2_PROTOCOL_ERROR') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
+                  aiResponse = "I'm having a brief connection hiccup. Let me try that again - could you please resend your message?";
+                } else if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
+                  aiResponse = "I encountered an issue processing that request. Could you try rephrasing your message differently?";
+                } else {
+                  aiResponse = "I'm sorry, I'm having trouble responding right now. Please try rephrasing your message or try again later.";
+                }
+              }
             }
           }
         }
-      }
       
       console.log('Received AI response type:', typeof aiResponse);
       console.log('AI response length:', aiResponse?.length || 0);
