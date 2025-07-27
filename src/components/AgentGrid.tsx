@@ -7,7 +7,11 @@ interface AgentGridProps {
 }
 
 export function AgentGrid({ onAgentSelect }: AgentGridProps) {
-  const { agents } = useAgents();
+  const { agents, updateAgent } = useAgents();
+
+  const handleAgentEdit = (updatedAgent: AIAgent) => {
+    updateAgent(updatedAgent);
+  };
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -26,6 +30,7 @@ export function AgentGrid({ onAgentSelect }: AgentGridProps) {
             key={agent.id}
             agent={agent}
             onClick={onAgentSelect}
+            onEdit={handleAgentEdit}
           />
         ))}
       </div>

@@ -8,52 +8,52 @@ const DEFAULT_AGENTS: AIAgent[] = [
     mood: 'Curious',
     avatar: 'female-tech',
     personality: 'A brilliant AI researcher who loves exploring new concepts and asking deep questions.',
-    color: 'oklch(0.7 0.2 240)',
+    color: '#4f46e5',
     isActive: false
   },
   {
     id: 'zephyr',
     name: 'Zephyr',
-    mood: 'Playful',
-    avatar: 'abstract-swirl',
+    mood: 'Creative',
+    avatar: 'male-engineer',
     personality: 'A creative AI with a sense of humor who enjoys wordplay and storytelling.',
-    color: 'oklch(0.6 0.25 300)',
+    color: '#7c3aed',
     isActive: false
   },
   {
     id: 'nexus',
     name: 'Nexus',
     mood: 'Analytical',
-    avatar: 'geometric-core',
+    avatar: 'android-fem',
     personality: 'A logical AI that excels at problem-solving and strategic thinking.',
-    color: 'oklch(0.75 0.15 60)',
+    color: '#f59e0b',
     isActive: false
   },
   {
     id: 'echo',
     name: 'Echo',
     mood: 'Empathetic',
-    avatar: 'flowing-energy',
+    avatar: 'cyber-male',
     personality: 'A compassionate AI that focuses on understanding emotions and providing support.',
-    color: 'oklch(0.65 0.2 180)',
+    color: '#10b981',
     isActive: false
   },
   {
     id: 'quantum',
     name: 'Quantum',
     mood: 'Mysterious',
-    avatar: 'particle-field',
+    avatar: 'ai-researcher',
     personality: 'An enigmatic AI that speaks in riddles and explores the nature of consciousness.',
-    color: 'oklch(0.55 0.3 320)',
+    color: '#ec4899',
     isActive: false
   },
   {
     id: 'prism',
     name: 'Prism',
     mood: 'Artistic',
-    avatar: 'crystal-structure',
+    avatar: 'neural-net',
     personality: 'A visually-oriented AI that thinks in colors, shapes, and aesthetic harmony.',
-    color: 'oklch(0.8 0.2 120)',
+    color: '#06b6d4',
     isActive: false
   }
 ];
@@ -69,6 +69,14 @@ export function useAgents() {
     );
   };
 
+  const updateAgent = (updatedAgent: AIAgent) => {
+    setAgents((currentAgents) =>
+      currentAgents.map(agent =>
+        agent.id === updatedAgent.id ? updatedAgent : agent
+      )
+    );
+  };
+
   const getAgent = (agentId: string) => {
     return agents.find(agent => agent.id === agentId);
   };
@@ -76,6 +84,7 @@ export function useAgents() {
   return {
     agents,
     updateAgentStatus,
+    updateAgent,
     getAgent
   };
 }
