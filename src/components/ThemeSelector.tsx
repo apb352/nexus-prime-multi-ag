@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Palette } from '@phosphor-icons/react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Palette, DiscordLogo, Settings } from '@phosphor-icons/react';
 import { useTheme } from '@/hooks/use-theme';
-import { GlobalDiscordSettings } from './GlobalDiscordSettings';
+import { DiscordBotManager } from './DiscordBotManager';
 import { Theme } from '@/lib/types';
 
 const THEMES: { value: Theme; label: string; description: string }[] = [
@@ -13,11 +15,32 @@ const THEMES: { value: Theme; label: string; description: string }[] = [
 
 export function ThemeSelector() {
   const { theme, setTheme } = useTheme();
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <div className="fixed top-4 right-4 z-50 flex gap-2">
-      <GlobalDiscordSettings />
+      {/* Discord Settings */}
+      <Popover open={showSettings} onOpenChange={setShowSettings}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-card/80 backdrop-blur-sm border-border"
+          >
+            <DiscordLogo size={16} className="mr-2" />
+            Discord
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-[500px] p-0 z-[2500]" 
+          side="bottom"
+          align="end"
+        >
+          <DiscordBotManager />
+        </PopoverContent>
+      </Popover>
       
+      {/* Theme Selector */}
       <Select value={theme} onValueChange={(value: Theme) => setTheme(value)}>
         <SelectTrigger className="w-40 bg-card/80 backdrop-blur-sm border-border">
           <div className="flex items-center space-x-2">

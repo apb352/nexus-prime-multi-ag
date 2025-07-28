@@ -5,6 +5,7 @@ import { ChatWindow } from '@/components/ChatWindow';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { DebugPanel } from '@/components/DebugPanel';
 import { EmergencyStop } from '@/components/EmergencyStop';
+import { DiscordStatus } from '@/components/DiscordStatus';
 import { TestFixes } from '@/test-fixes';
 import { useAgents } from '@/hooks/use-agents';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
@@ -109,6 +110,9 @@ function App() {
       </div>
 
       <ThemeSelector />
+      
+      {/* Discord Status */}
+      <DiscordStatus className="fixed top-16 right-4 z-50" />
       
       {/* Emergency Stop */}
       <EmergencyStop

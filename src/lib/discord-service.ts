@@ -66,8 +66,14 @@ class DiscordService {
     this.settings = { ...newSettings };
     this.saveSettings();
     
-    if (newSettings.enabled) {
-      await this.connect();
+    if (newSettings.enabled && newSettings.botToken) {
+      try {
+        await this.connect();
+      } catch (error) {
+        console.error('Failed to connect with new settings:', error);
+        // Don't throw here, just log the error
+        this.connected = false;
+      }
     } else {
       this.disconnect();
     }
@@ -97,6 +103,16 @@ class DiscordService {
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401) {
+          throw new Error('Invalid bot token - please check your token');
+        } else if (response.status === 403) {
+          throw new Error('Bot token lacks necessary permissions');
+        } else if (response.status === 429) {
+          throw new Error('Rate limited - please try again in a moment');
+        }
+        
         throw new Error(`Discord API error: ${response.status}`);
       }
 
@@ -260,6 +276,7 @@ class DiscordService {
         return { success: false, message: 'Bot token is required' };
       }
 
+      // Test the bot token by fetching bot user info
       const response = await fetch('https://discord.com/api/v10/users/@me', {
         headers: {
           'Authorization': `Bot ${this.settings.botToken}`,
@@ -268,12 +285,33 @@ class DiscordService {
       });
 
       if (!response.ok) {
-        return { success: false, message: `Invalid bot token (${response.status})` };
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401) {
+          return { success: false, message: 'Invalid bot token - please check your token' };
+        } else if (response.status === 403) {
+          return { success: false, message: 'Bot token lacks necessary permissions' };
+        } else if (response.status === 429) {
+          return { success: false, message: 'Rate limited - please try again in a moment' };
+        }
+        
+        return { success: false, message: `Discord API error: ${response.status}` };
       }
 
       const botUser = await response.json();
-      return { success: true, message: `Connected as ${botUser.username}` };
+      
+      // Update connection state
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      
+      return { success: true, message: `Connected as ${botUser.username}#${botUser.discriminator}` };
     } catch (error) {
+      this.connected = false;
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        return { success: false, message: 'Network error - check your internet connection' };
+      }
+      
       return { success: false, message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }

@@ -59,15 +59,18 @@
 - **Purpose**: Provide immediate visual feedback during voice synthesis and enhance the sense of living, breathing digital beings
 - **Success Criteria**: Smooth animations synchronized with speech, multiple visualization styles (bars, waves, pulse), responsive to voice levels
 
-### Discord Integration
-- **Functionality**: Connect AI agents to Discord servers and channels with:
-  - Bot token authentication and server/channel selection
-  - Message bridging from agents to Discord channels
-  - Webhook support for custom agent avatars and formatting
-  - Individual agent Discord settings with enable/disable controls
-  - Global Discord configuration with connection status indicators
-- **Purpose**: Extend the reach of AI agents beyond the app into Discord communities and enable seamless cross-platform communication
-- **Success Criteria**: Reliable Discord connection, successful message delivery, clear connection status, per-agent control over Discord integration
+### Discord Bot Integration
+- **Functionality**: Complete Discord bot setup and management system featuring:
+  - Step-by-step bot creation wizard with detailed instructions and external links
+  - Automatic bot token validation and connection testing with detailed error messages
+  - Server and channel selection with real-time loading and filtering
+  - Message bridging between AI agents and Discord channels
+  - Webhook support for custom agent avatars and formatted messages
+  - Command system for Discord users to interact with agents
+  - Real-time status monitoring and connection management interface
+  - Global and per-agent Discord settings configuration
+- **Purpose**: Enable seamless integration between Nexus Prime AI agents and Discord communities, allowing two-way communication
+- **Success Criteria**: Intuitive bot setup process, reliable message delivery, persistent connections, comprehensive management interface
 
 ## Design Direction
 
