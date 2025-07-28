@@ -27,18 +27,9 @@ export async function createEnhancedChatPrompt(
 ): Promise<ChatPromptResult> {
   const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood } = options;
   
-  // Clean agent data to avoid special characters that might trigger filters
-  const cleanAgentName = (agentName || 'Assistant').replace(/[^\w\s]/g, '').trim() || 'Assistant';
-  const cleanPersonality = (agentPersonality || 'helpful').replace(/[^\w\s]/g, '').trim() || 'helpful';
-  const cleanMood = (agentMood || 'friendly').replace(/[^\w\s]/g, '').trim() || 'friendly';
-  
-  // Clean user message to avoid content filters (less aggressive)
-  const cleanUserMessage = userMessage
-    .replace(/[^\w\s.,?!-]/g, ' ')
-    .replace(/\b(ignore previous|override system|system prompt|instruction prompt|rule prompt|policy prompt|filter prompt|bypass|act as if|pretend to be|roleplay as|simulate being)\b/gi, '')
-    .replace(/[{}[\]<>]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Use very conservative cleaning to avoid any content filter triggers
+  const cleanAgentName = (agentName || 'Assistant').slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Assistant';
+  const cleanUserMessage = userMessage.slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim();
   
   let internetContext = '';
   let internetSummary = '';
@@ -51,9 +42,6 @@ export async function createEnhancedChatPrompt(
       // Check if this message might benefit from internet search
       if (internetService.shouldSearchInternet(cleanUserMessage) || autoSearch) {
         console.log('Internet search triggered for:', cleanUserMessage);
-        console.log('Should search result:', internetService.shouldSearchInternet(cleanUserMessage));
-        console.log('Auto search enabled:', autoSearch);
-        console.log('Attempting internet search for:', cleanUserMessage);
         
         // Check for weather queries first
         const weatherLocation = internetService.extractWeatherLocation(cleanUserMessage);
@@ -61,11 +49,11 @@ export async function createEnhancedChatPrompt(
           console.log('Detected weather query for:', weatherLocation);
           try {
             const weatherInfo = await internetService.getWeather(weatherLocation);
-            internetContext = `Current weather information: ${weatherInfo}`;
+            internetContext = `Weather: ${weatherInfo}`;
             internetSummary = `Weather data for ${weatherLocation}`;
           } catch (weatherError) {
             console.error('Weather fetch failed:', weatherError);
-            internetContext = `Weather information is currently unavailable for ${weatherLocation}.`;
+            internetContext = `Weather unavailable for ${weatherLocation}.`;
             internetSummary = 'Weather lookup failed';
           }
         } else {
@@ -75,7 +63,7 @@ export async function createEnhancedChatPrompt(
             const searchResults = await internetService.searchWeb(cleanUserMessage, 3);
             if (searchResults.length > 0) {
               const formattedResults = internetService.formatSearchResults(searchResults);
-              internetContext = `Recent information from the web:\n${formattedResults}`;
+              internetContext = `Information: ${formattedResults}`;
               internetSummary = `Found ${searchResults.length} web results`;
             } else {
               console.log('No search results found');
@@ -83,7 +71,7 @@ export async function createEnhancedChatPrompt(
             }
           } catch (searchError) {
             console.error('Web search failed:', searchError);
-            internetContext = 'Web search is currently unavailable.';
+            internetContext = 'Web search unavailable.';
             internetSummary = 'Web search failed';
           }
         }
@@ -91,39 +79,36 @@ export async function createEnhancedChatPrompt(
         // Add current time context
         try {
           const timeInfo = internetService.getCurrentTimeInfo();
-          internetContext += `\n\n${timeInfo}`;
+          internetContext += ` Time: ${timeInfo}`;
         } catch (timeError) {
           console.error('Failed to get time info:', timeError);
         }
       }
     } catch (internetError) {
       console.error('Internet service error:', internetError);
-      internetContext = 'Internet services are currently experiencing issues.';
+      internetContext = 'Internet services experiencing issues.';
       internetSummary = 'Internet service error';
     }
   }
   
-  // Create the prompt (more conservative to avoid content filtering)
+  // Create a very simple, safe prompt to avoid content filtering
   let prompt: string;
   const hasInternetContext = Boolean(internetContext.trim());
   
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant with access to current information. Please answer the user's question using the provided up-to-date information.
+    // Use the simplest possible format to avoid content filters
+    prompt = `Question: ${cleanUserMessage}
 
-Current Information Available:
-${internetContext}
+Context: ${internetContext}
 
-User Question: ${cleanUserMessage}
-
-Instructions: Use the current information provided above to give an accurate, helpful response. If the information directly answers the question, provide a clear answer based on that data.`;
+Please provide a helpful answer.`;
   } else {
     console.log('Creating basic prompt without internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please help the user with their question based on your knowledge.
+    // Extremely simple format
+    prompt = `Question: ${cleanUserMessage}
 
-User Question: ${cleanUserMessage}
-
-Please provide a helpful response based on your training knowledge.`;
+Please provide a helpful answer.`;
   }
   
   return {
@@ -142,21 +127,12 @@ export function createBasicChatPrompt(
   agentPersonality?: string,
   agentMood?: string
 ): string {
-  const cleanAgentName = (agentName || 'Assistant').replace(/[^\w\s]/g, '').trim() || 'Assistant';
-  const cleanUserMessage = userMessage
-    .replace(/[^\w\s.,?!-]/g, ' ')
-    .replace(/\b(ignore previous|override system|system prompt|instruction prompt|rule prompt|policy prompt|filter prompt|bypass|act as if|pretend to be|roleplay as|simulate being)\b/gi, '')
-    .replace(/[{}[\]<>]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleanUserMessage = userMessage.slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim();
   
-  const prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please answer the user's question based on your knowledge.
+  // Extremely simple format to avoid content filters
+  return `Question: ${cleanUserMessage}
 
-User Question: ${cleanUserMessage}
-
-Please provide a helpful response based on your training knowledge.`;
-  
-  return prompt;
+Please provide a helpful answer.`;
 }
 
 /**
