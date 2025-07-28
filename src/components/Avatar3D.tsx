@@ -91,6 +91,21 @@ export function Avatar3D({ avatarType, color, isActive, size = 100, mood = 'neut
         specular: 0x111111
       });
       
+      // Define hair material early to avoid initialization order issues
+      const hairColors = [
+        new THREE.Color().setHSL(0.05, 0.8, 0.15), // Dark brown
+        new THREE.Color().setHSL(0.06, 0.6, 0.25), // Brown
+        new THREE.Color().setHSL(0.08, 0.4, 0.35), // Light brown
+        new THREE.Color().setHSL(0.1, 0.3, 0.45), // Blonde
+        new THREE.Color().setHSL(0, 0, 0.1), // Black
+        new THREE.Color().setHSL(0, 0, 0.4), // Gray
+      ];
+      
+      const hairMaterial = new THREE.MeshPhongMaterial({ 
+        color: hairColors[Math.floor(Math.random() * hairColors.length)],
+        shininess: 60
+      });
+      
       // Varied clothing colors
       const clothingColors = [
         baseColor,
@@ -114,6 +129,7 @@ export function Avatar3D({ avatarType, color, isActive, size = 100, mood = 'neut
         shininess: 25
       });
       
+      // Define hair material early to avoid initialization order issues
       const hairColors = [
         new THREE.Color().setHSL(0.05, 0.8, 0.15), // Dark brown
         new THREE.Color().setHSL(0.06, 0.6, 0.25), // Brown
