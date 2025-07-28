@@ -1,6 +1,7 @@
 import { useKV } from '@github/spark/hooks';
 import { AIAgent } from '@/lib/types';
 import { VOICE_PROFILES } from '@/lib/voice-service';
+import { defaultImageSettings } from '@/lib/image-service';
 
 const DEFAULT_AGENTS: AIAgent[] = [
   {
@@ -23,6 +24,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'realistic'
     }
   },
   {
@@ -45,6 +51,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'artistic'
     }
   },
   {
@@ -67,6 +78,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'minimalist'
     }
   },
   {
@@ -89,6 +105,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'realistic'
     }
   },
   {
@@ -111,6 +132,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'artistic'
     }
   },
   {
@@ -133,6 +159,11 @@ const DEFAULT_AGENTS: AIAgent[] = [
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: {
+      ...defaultImageSettings,
+      enabled: true,
+      imageStyle: 'cyberpunk'
     }
   }
 ];
@@ -140,7 +171,7 @@ const DEFAULT_AGENTS: AIAgent[] = [
 export function useAgents() {
   const [agents, setAgents] = useKV<AIAgent[]>('nexus-agents', DEFAULT_AGENTS);
 
-  // Ensure all agents have proper voice settings and internet settings
+  // Ensure all agents have proper voice settings, internet settings, and image settings
   const normalizedAgents = agents.map(agent => ({
     ...agent,
     voiceSettings: agent.voiceSettings || {
@@ -155,6 +186,10 @@ export function useAgents() {
       safeSearch: true,
       allowedDomains: [],
       blockedDomains: []
+    },
+    imageSettings: agent.imageSettings || {
+      ...defaultImageSettings,
+      enabled: true
     }
   }));
 

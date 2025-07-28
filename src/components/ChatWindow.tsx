@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Minus, Send, Settings, SpeakerHigh } from '@phosphor-icons/react';
+import { X, Minus, Send, Settings, SpeakerHigh, Image as ImageIcon } from '@phosphor-icons/react';
 import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
@@ -11,10 +11,14 @@ import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
 import { DiscordControls } from './DiscordControls';
+import { ImageControls } from './ImageControls';
+import { CanvasDrawing } from './CanvasDrawing';
+import { ImageViewer } from './ImageViewer';
 import { SpeakingOverlay } from './SpeakingOverlay';
 import { VoiceVisualization } from './VoiceVisualization';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { discordService } from '@/lib/discord-service';
+import { ImageService, ImageSettings } from '@/lib/image-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 
 interface ChatWindowProps {
@@ -53,12 +57,23 @@ export function ChatWindow({
   const [showSpeakingOverlay, setShowSpeakingOverlay] = useState(false);
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [imageEnabled, setImageEnabled] = useState(agent.imageSettings?.enabled ?? false);
+  const [showCanvas, setShowCanvas] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<Array<{
+    id: string;
+    url: string;
+    prompt: string;
+    timestamp: Date;
+    style: string;
+  }>>([]);
   
-  // Update internet settings when agent changes
+  // Update internet and image settings when agent changes
   useEffect(() => {
     setInternetEnabled(agent.internetSettings?.enabled ?? false);
     setAutoSearch(agent.internetSettings?.autoSearch ?? false);
-  }, [agent.internetSettings]);
+    setImageEnabled(agent.imageSettings?.enabled ?? false);
+  }, [agent.internetSettings, agent.imageSettings]);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -111,6 +126,80 @@ export function ChatWindow({
     }
   };
 
+  const handleImageSettingsChange = (newSettings: ImageSettings) => {
+    updateAgent({
+      ...agent,
+      imageSettings: newSettings
+    });
+    setImageEnabled(newSettings.enabled);
+  };
+
+  const handleGenerateImage = async (prompt: string) => {
+    if (!agent.imageSettings?.enabled || isGeneratingImage) return;
+
+    setIsGeneratingImage(true);
+    
+    try {
+      const imageService = ImageService.getInstance();
+      const imageUrl = await imageService.generateImage(prompt, agent.imageSettings);
+      
+      if (imageUrl) {
+        const newImage = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          url: imageUrl,
+          prompt,
+          timestamp: new Date(),
+          style: agent.imageSettings.imageStyle
+        };
+        
+        setGeneratedImages(prev => [...prev, newImage]);
+        
+        // Add image message to chat
+        addMessage(agent.id, {
+          content: `I've generated an image for you: "${prompt}"`,
+          sender: 'ai',
+          agentId: agent.id,
+          imageUrl,
+          imagePrompt: prompt
+        });
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      addMessage(agent.id, {
+        content: `I encountered an error while generating the image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        sender: 'ai',
+        agentId: agent.id
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleCanvasImageCreate = (imageUrl: string) => {
+    const newImage = {
+      id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      url: imageUrl,
+      prompt: 'Canvas drawing',
+      timestamp: new Date(),
+      style: 'hand-drawn'
+    };
+    
+    setGeneratedImages(prev => [...prev, newImage]);
+    
+    // Add canvas image message to chat
+    addMessage(agent.id, {
+      content: "I've created a canvas drawing for you!",
+      sender: 'ai',
+      agentId: agent.id,
+      imageUrl,
+      imagePrompt: 'Canvas drawing'
+    });
+  };
+
+  const handleRemoveImage = (imageId: string) => {
+    setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
 
@@ -126,6 +215,33 @@ export function ChatWindow({
     });
 
     try {
+      // Check if this is an image generation request
+      const imageGenerationKeywords = [
+        'generate image', 'create image', 'draw', 'paint', 'visualize', 
+        'show me', 'create a picture', 'make an image', 'generate a picture',
+        'can you draw', 'can you create', 'can you make'
+      ];
+      
+      const isImageRequest = imageGenerationKeywords.some(keyword => 
+        userMessage.toLowerCase().includes(keyword)
+      );
+
+      if (isImageRequest && agent.imageSettings?.enabled && agent.imageSettings.imageGenEnabled) {
+        // Extract prompt for image generation
+        let imagePrompt = userMessage;
+        
+        // Clean up the prompt by removing generation commands
+        const cleanPrompt = imagePrompt
+          .replace(/(?:generate|create|draw|paint|visualize|show me|make)\s+(?:an?\s+)?(?:image|picture|drawing)\s+(?:of\s+)?/gi, '')
+          .replace(/(?:can you\s+)?(?:generate|create|draw|paint|make)\s+/gi, '')
+          .trim();
+        
+        if (cleanPrompt) {
+          await handleGenerateImage(cleanPrompt);
+          return; // Exit early as we've handled the image generation
+        }
+      }
+
       console.log('Starting chat message handling for:', userMessage);
       console.log('Internet enabled:', internetEnabled, 'Auto search:', autoSearch);
 
@@ -169,7 +285,8 @@ export function ChatWindow({
           userMessage,
           agentName: agent.name,
           agentPersonality: agent.personality,
-          agentMood: agent.mood
+          agentMood: agent.mood,
+          imageEnabled: agent.imageSettings?.enabled ?? false
         });
         
         console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
@@ -501,6 +618,78 @@ export function ChatWindow({
     setAutoSearch(enabled);
   };
 
+  const handleVoiceSettingsChange = (newSettings: VoiceSettings) => {
+    updateAgent({
+      ...agent,
+      voiceSettings: newSettings
+    });
+  };
+
+  const handleSpeakMessage = (content: string) => {
+    // This is called by VoiceControls for testing voice
+    if (agent.voiceSettings?.enabled && agent.voiceSettings?.profile) {
+      voiceService.speakWithLipSync(
+        content,
+        agent.voiceSettings.profile,
+        () => {} // No voice level tracking for test speak
+      );
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isResizing) return;
+    
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (rect) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - window.position.x,
+        y: e.clientY - window.position.y
+      });
+    }
+  };
+
+  // Handle mouse events for dragging and resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        onUpdatePosition(window.id, {
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y
+        });
+      } else if (isResizing) {
+        const rect = windowRef.current?.getBoundingClientRect();
+        if (rect) {
+          onUpdateSize(window.id, {
+            width: Math.max(350, e.clientX - rect.left),
+            height: Math.max(400, e.clientY - rect.top)
+          });
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
+
   if (window.isMinimized) {
     return (
       <div
@@ -610,6 +799,25 @@ export function ChatWindow({
             className="mr-2"
           />
           
+          <ImageControls
+            settings={agent.imageSettings || { enabled: false, canvasEnabled: true, imageGenEnabled: true, maxCanvasSize: 512, imageStyle: 'realistic', quality: 'standard' }}
+            onSettingsChange={handleImageSettingsChange}
+            onGenerateImage={handleGenerateImage}
+            isGenerating={isGeneratingImage}
+          />
+          
+          {agent.imageSettings?.enabled && agent.imageSettings?.canvasEnabled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCanvas(!showCanvas)}
+              className={showCanvas ? 'text-accent' : ''}
+              title="Toggle Canvas"
+            >
+              <ImageIcon size={16} />
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             size="sm"
@@ -670,6 +878,29 @@ export function ChatWindow({
               )}
               
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              
+              {/* Display generated image if present */}
+              {msg.imageUrl && (
+                <div className="mt-2">
+                  <img
+                    src={msg.imageUrl}
+                    alt={msg.imagePrompt || 'Generated image'}
+                    className="max-w-full h-auto rounded-md border border-border cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => {
+                      // Open image in fullscreen
+                      const newWindow = window.open();
+                      if (newWindow) {
+                        newWindow.document.write(`<img src="${msg.imageUrl}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
+                      }
+                    }}
+                  />
+                  {msg.imagePrompt && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      "{msg.imagePrompt}"
+                    </p>
+                  )}
+                </div>
+              )}
               
               <div className="flex items-center justify-between mt-1">
                 <p className="text-xs opacity-70">
@@ -740,6 +971,31 @@ export function ChatWindow({
           </div>
         )}
       </div>
+
+      {/* Canvas Drawing Section */}
+      {showCanvas && agent.imageSettings?.enabled && agent.imageSettings?.canvasEnabled && (
+        <div className="border-t border-border p-4">
+          <CanvasDrawing
+            width={Math.min(window.size.width - 32, agent.imageSettings.maxCanvasSize)}
+            height={200}
+            onImageCreate={handleCanvasImageCreate}
+          />
+        </div>
+      )}
+
+      {/* Generated Images Section */}
+      {generatedImages.length > 0 && (
+        <div className="border-t border-border p-4 max-h-60 overflow-y-auto">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <ImageIcon size={16} />
+            Generated Images ({generatedImages.length})
+          </h4>
+          <ImageViewer
+            images={generatedImages}
+            onRemoveImage={handleRemoveImage}
+          />
+        </div>
+      )}
 
       {/* Input */}
       <div className="p-4 border-t border-border">

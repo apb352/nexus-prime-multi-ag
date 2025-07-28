@@ -72,6 +72,19 @@
 - **Purpose**: Enable seamless integration between Nexus Prime AI agents and Discord communities, allowing two-way communication
 - **Success Criteria**: Intuitive bot setup process, reliable message delivery, persistent connections, comprehensive management interface
 
+### AI Image Generation & Canvas Tools
+- **Functionality**: Advanced image creation and manipulation system featuring:
+  - AI-powered image generation with customizable styles (realistic, artistic, cartoon, cyberpunk, minimalist)
+  - Interactive canvas drawing with brush tools, shapes, colors, and layers
+  - Smart prompt detection for automatic image generation from natural language
+  - Image gallery with full-screen viewing and download capabilities
+  - Per-agent style preferences and generation settings
+  - Integration with chat flow showing generated images inline with messages
+  - Canvas size control up to 1024px with quality settings (standard/HD)
+  - Drawing tools including brush, eraser, shapes, and undo/redo functionality
+- **Purpose**: Enable agents to create visual content, respond to image requests, and provide canvas tools for collaborative drawing
+- **Success Criteria**: High-quality image generation, responsive canvas tools, seamless chat integration, persistent image storage
+
 ## Design Direction
 
 ### Visual Tone & Identity

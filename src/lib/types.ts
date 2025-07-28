@@ -1,6 +1,7 @@
 import { VoiceSettings } from './voice-service';
 import { InternetSettings } from './internet-service';
 import { DiscordSettings } from './discord-service';
+import { ImageSettings } from './image-service';
 
 export interface AIAgent {
   id: string;
@@ -13,6 +14,7 @@ export interface AIAgent {
   voiceSettings?: VoiceSettings;
   internetSettings?: InternetSettings;
   discordSettings?: DiscordSettings;
+  imageSettings?: ImageSettings;
 }
 
 export interface ChatMessage {
@@ -21,6 +23,8 @@ export interface ChatMessage {
   sender: 'user' | 'ai';
   timestamp: Date;
   agentId: string;
+  imageUrl?: string;
+  imagePrompt?: string;
 }
 
 export interface ChatWindow {
@@ -36,6 +40,8 @@ export interface ChatWindow {
   autoSearch?: boolean;
   discordEnabled?: boolean;
   discordBridge?: boolean;
+  imageEnabled?: boolean;
+  showCanvas?: boolean;
 }
 
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';

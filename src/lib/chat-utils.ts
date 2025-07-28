@@ -11,6 +11,8 @@ export interface ChatEnhancementOptions {
   agentName: string;
   agentPersonality: string;
   agentMood: string;
+  imageEnabled?: boolean;
+  hasImageGeneration?: boolean;
 }
 
 export interface ChatPromptResult {
@@ -25,7 +27,7 @@ export interface ChatPromptResult {
 export async function createEnhancedChatPrompt(
   options: ChatEnhancementOptions
 ): Promise<ChatPromptResult> {
-  const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood } = options;
+  const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood, imageEnabled = false } = options;
   
   // Use very conservative cleaning to avoid any content filter triggers
   const cleanAgentName = (agentName || 'Assistant').slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Assistant';
@@ -95,18 +97,24 @@ export async function createEnhancedChatPrompt(
   let prompt: string;
   const hasInternetContext = Boolean(internetContext.trim());
   
+  // Add image generation capability context if enabled
+  let imageContext = '';
+  if (imageEnabled) {
+    imageContext = '\n\nI can also create images and drawings for you. Just ask me to generate, create, draw, or visualize something!';
+  }
+  
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
     // Use the simplest possible format to avoid content filters
     prompt = `Question: ${cleanUserMessage}
 
-Context: ${internetContext}
+Context: ${internetContext}${imageContext}
 
 Please provide a helpful answer.`;
   } else {
     console.log('Creating basic prompt without internet context');
     // Extremely simple format
-    prompt = `Question: ${cleanUserMessage}
+    prompt = `Question: ${cleanUserMessage}${imageContext}
 
 Please provide a helpful answer.`;
   }
