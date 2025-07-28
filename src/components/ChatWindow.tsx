@@ -10,6 +10,7 @@ import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
+import { SpeakingOverlay } from './SpeakingOverlay';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 
@@ -45,6 +46,9 @@ export function ChatWindow({
   const [internetEnabled, setInternetEnabled] = useState(agent.internetSettings?.enabled ?? false);
   const [autoSearch, setAutoSearch] = useState(agent.internetSettings?.autoSearch ?? false);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showSpeakingOverlay, setShowSpeakingOverlay] = useState(false);
+  const [voiceLevel, setVoiceLevel] = useState(0);
   
   // Update internet settings when agent changes
   useEffect(() => {
@@ -256,14 +260,27 @@ export function ChatWindow({
 
       console.log('AI message added successfully');
 
-      // Auto-speak the AI response if enabled
+      // Auto-speak the AI response if enabled with speaking overlay
       if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
         try {
           if (agent.voiceSettings?.profile) {
-            await voiceService.speak(aiResponse, agent.voiceSettings.profile);
+            setIsSpeaking(true);
+            setShowSpeakingOverlay(true);
+            
+            // Enhanced voice synthesis with lip sync
+            await voiceService.speakWithLipSync(
+              aiResponse, 
+              agent.voiceSettings.profile,
+              (level: number) => setVoiceLevel(level)
+            );
+            
+            setIsSpeaking(false);
+            setTimeout(() => setShowSpeakingOverlay(false), 500);
           }
         } catch (error) {
           console.error('Voice synthesis failed:', error);
+          setIsSpeaking(false);
+          setShowSpeakingOverlay(false);
         }
       }
 
@@ -312,10 +329,22 @@ export function ChatWindow({
       if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
         try {
           if (agent.voiceSettings?.profile) {
-            await voiceService.speak(errorMessage, agent.voiceSettings.profile);
+            setIsSpeaking(true);
+            setShowSpeakingOverlay(true);
+            
+            await voiceService.speakWithLipSync(
+              errorMessage, 
+              agent.voiceSettings.profile,
+              (level: number) => setVoiceLevel(level)
+            );
+            
+            setIsSpeaking(false);
+            setTimeout(() => setShowSpeakingOverlay(false), 500);
           }
         } catch (voiceError) {
           console.error('Voice synthesis failed:', voiceError);
+          setIsSpeaking(false);
+          setShowSpeakingOverlay(false);
         }
       }
     } finally {
@@ -393,10 +422,22 @@ export function ChatWindow({
   const handleSpeakMessage = async (text: string) => {
     try {
       if (agent.voiceSettings?.profile) {
-        await voiceService.speak(text, agent.voiceSettings.profile);
+        setIsSpeaking(true);
+        setShowSpeakingOverlay(true);
+        
+        await voiceService.speakWithLipSync(
+          text, 
+          agent.voiceSettings.profile,
+          (level: number) => setVoiceLevel(level)
+        );
+        
+        setIsSpeaking(false);
+        setTimeout(() => setShowSpeakingOverlay(false), 500);
       }
     } catch (error) {
       console.error('Voice synthesis failed:', error);
+      setIsSpeaking(false);
+      setShowSpeakingOverlay(false);
     }
   };
 
@@ -464,7 +505,7 @@ export function ChatWindow({
               isActive={true}
               size={32}
               mood={agent.mood || 'neutral'}
-              isSpeaking={isLoading}
+              isSpeaking={isSpeaking || isLoading}
             />
           </div>
           <div>
@@ -616,6 +657,14 @@ export function ChatWindow({
         <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
         <div className="absolute bottom-2 right-2 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/30" />
       </div>
+      
+      {/* Speaking Overlay */}
+      <SpeakingOverlay
+        agent={agent}
+        isVisible={showSpeakingOverlay}
+        onClose={() => setShowSpeakingOverlay(false)}
+        voiceLevel={voiceLevel}
+      />
     </Card>
   );
 }

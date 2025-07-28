@@ -173,6 +173,140 @@ export class VoiceService {
     });
   }
 
+  public speakWithLipSync(
+    text: string, 
+    profile: VoiceProfile, 
+    onVoiceLevel?: (level: number) => void
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!text.trim()) {
+        resolve();
+        return;
+      }
+
+      // Cancel any ongoing speech
+      this.synthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Apply voice profile settings
+      utterance.pitch = Math.max(0.1, Math.min(2, profile.pitch));
+      utterance.rate = Math.max(0.1, Math.min(10, profile.rate));
+      utterance.volume = Math.max(0, Math.min(1, profile.volume));
+      utterance.lang = profile.lang;
+
+      // Set the best matching voice
+      const voice = this.findBestVoice(profile);
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      // Set up audio analysis for lip sync if available
+      let analyser: AnalyserNode | null = null;
+      let dataArray: Uint8Array | null = null;
+      let animationId: number | null = null;
+      
+      try {
+        // Try to set up Web Audio API for voice level detection
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        // Create a MediaStreamDestination to capture speech synthesis output
+        const destination = audioContext.createMediaStreamDestination();
+        
+        // Note: Speech synthesis output capture is limited in browsers
+        // We'll simulate voice levels based on speech timing instead
+        const simulateVoiceLevel = () => {
+          if (!onVoiceLevel) return;
+          
+          // Simulate realistic voice activity based on text characteristics
+          const words = text.split(/\s+/);
+          const speechDuration = (words.length / (profile.rate * 2.5)) * 1000; // Approximate duration
+          const startTime = Date.now();
+          
+          const updateLevel = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / speechDuration;
+            
+            if (progress >= 1) {
+              onVoiceLevel(0);
+              return;
+            }
+            
+            // Create realistic voice patterns
+            const baseLevel = 0.3 + Math.random() * 0.4;
+            const speechPattern = Math.sin(elapsed * 0.01) * 0.3 + 0.3;
+            const microVariation = Math.sin(elapsed * 0.02) * 0.2;
+            const wordBreaks = Math.sin(elapsed * 0.005) > 0.8 ? 0.1 : 1;
+            
+            const level = Math.max(0, Math.min(1, 
+              (baseLevel + speechPattern + microVariation) * wordBreaks
+            ));
+            
+            onVoiceLevel(level);
+            animationId = requestAnimationFrame(updateLevel);
+          };
+          
+          updateLevel();
+        };
+        
+        simulateVoiceLevel();
+        
+      } catch (error) {
+        console.warn('Could not set up audio analysis for lip sync:', error);
+        
+        // Fallback: Simple simulation without Web Audio API
+        if (onVoiceLevel) {
+          const words = text.split(/\s+/);
+          const speechDuration = (words.length / (profile.rate * 2.5)) * 1000;
+          const startTime = Date.now();
+          
+          const simpleUpdate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / speechDuration;
+            
+            if (progress >= 1) {
+              onVoiceLevel(0);
+              return;
+            }
+            
+            // Simple sine wave pattern
+            const level = Math.sin(elapsed * 0.008) * 0.5 + 0.5;
+            onVoiceLevel(level * 0.7); // Moderate intensity
+            animationId = requestAnimationFrame(simpleUpdate);
+          };
+          
+          simpleUpdate();
+        }
+      }
+
+      utterance.onend = () => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        if (onVoiceLevel) {
+          onVoiceLevel(0); // Reset voice level
+        }
+        resolve();
+      };
+      
+      utterance.onerror = (event) => {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+        }
+        if (onVoiceLevel) {
+          onVoiceLevel(0); // Reset voice level
+        }
+        reject(new Error(`Speech synthesis error: ${event.error}`));
+      };
+
+      this.synthesis.speak(utterance);
+    });
+  }
+
   public stop(): void {
     this.synthesis.cancel();
   }
