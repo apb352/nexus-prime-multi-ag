@@ -128,12 +128,6 @@ export function Avatar3D({ avatarType, color, isActive, size = 100, mood = 'neut
         color: secondaryClothingColor.clone().multiplyScalar(0.8),
         shininess: 25
       });
-      
-      // Define hair material for eyebrows and hair
-      const hairMaterial = new THREE.MeshPhongMaterial({ 
-        color: hairColors[Math.floor(Math.random() * hairColors.length)],
-        shininess: 60
-      });
 
       // Head (more oval shape with better proportions)
       const headGeometry = new THREE.SphereGeometry(0.35, 24, 18);
@@ -425,7 +419,7 @@ export function Avatar3D({ avatarType, color, isActive, size = 100, mood = 'neut
         browGroup.add(browMain);
         
         // Brow hairs for texture
-        const hairMaterial = new THREE.MeshPhongMaterial({ 
+        const browHairMaterial = new THREE.MeshPhongMaterial({ 
           color: browMaterial.color.clone().multiplyScalar(0.9),
           shininess: 40
         });
@@ -435,7 +429,7 @@ export function Avatar3D({ avatarType, color, isActive, size = 100, mood = 'neut
           const hairLength = 0.008 + Math.random() * 0.006;
           const hairThickness = 0.0008 + Math.random() * 0.0004;
           const hairGeometry = new THREE.CylinderGeometry(hairThickness, hairThickness * 0.5, hairLength, 3);
-          const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+          const hair = new THREE.Mesh(hairGeometry, browHairMaterial);
           
           // Natural hair distribution
           const xPos = (i / 14 - 0.5) * 0.13;
