@@ -545,6 +545,7 @@ export function ChatWindow({
           </div>
           <div className="flex flex-col">
             <h3 className="font-semibold text-foreground">{agent.name}</h3>
+            <p className="text-xs text-muted-foreground">{agent.mood}</p>
             {/* Global voice indicator in header */}
             {agent.voiceSettings?.enabled && isSpeaking && (
               <VoiceVisualization
@@ -553,9 +554,6 @@ export function ChatWindow({
                 className="mt-1"
               />
             )}
-          </div>
-        </div>
-            <p className="text-xs text-muted-foreground">{agent.mood}</p>
           </div>
         </div>
         
