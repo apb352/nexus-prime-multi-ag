@@ -530,6 +530,8 @@ export function GroupChatWindow({
                           color={agent.color}
                           isActive={true}
                           size={16}
+                          mood={agent.mood || 'neutral'}
+                          isSpeaking={false}
                         />
                       </div>
                       <span className="text-xs font-semibold" style={{ color: agent.color }}>

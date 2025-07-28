@@ -55,6 +55,8 @@ export function GroupAgentManager({
               color={agent.color}
               isActive={true}
               size={16}
+              mood={agent.mood || 'neutral'}
+              isSpeaking={false}
             />
           </div>
           <span className="font-medium">{agent.name}</span>
@@ -120,6 +122,8 @@ export function GroupAgentManager({
                             color={agent.color}
                             isActive={true}
                             size={32}
+                            mood={agent.mood || 'neutral'}
+                            isSpeaking={false}
                           />
                         </div>
                         <div className="flex-1">

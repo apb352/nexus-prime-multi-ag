@@ -58,6 +58,8 @@ export function AgentCard({ agent, onClick, onEdit }: AgentCardProps) {
               color={agent.color}
               isActive={agent.isActive}
               size={120}
+              mood={agent.mood || 'neutral'}
+              isSpeaking={false}
             />
             {agent.isActive && (
               <div className="absolute -top-2 -right-2">

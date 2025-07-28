@@ -77,6 +77,8 @@ export function AgentEditor({ agent, isOpen, onClose, onSave }: AgentEditorProps
                 color={editedAgent.color}
                 isActive={false}
                 size={120}
+                mood={editedAgent.mood || 'neutral'}
+                isSpeaking={false}
               />
             </div>
           </div>

@@ -177,6 +177,8 @@ export function AgentManager({ activeWindowAgents, onRemoveAgent }: AgentManager
                               color={agent.color}
                               isActive={agent.isActive}
                               size={40}
+                              mood={agent.mood || 'neutral'}
+                              isSpeaking={false}
                             />
                           </div>
                           <div className="flex-1">
@@ -322,6 +324,8 @@ export function AgentManager({ activeWindowAgents, onRemoveAgent }: AgentManager
                       color={formData.color}
                       isActive={true}
                       size={64}
+                      mood={formData.mood || 'neutral'}
+                      isSpeaking={false}
                     />
                   </div>
                   <p className="text-sm font-medium">{formData.name || 'Preview'}</p>

@@ -425,6 +425,8 @@ export function ChatWindow({
               color={agent.color}
               isActive={true}
               size={32}
+              mood={agent.mood || 'neutral'}
+              isSpeaking={isLoading}
             />
           </div>
           <span className="text-sm font-medium">{agent.name}</span>
@@ -461,6 +463,8 @@ export function ChatWindow({
               color={agent.color}
               isActive={true}
               size={32}
+              mood={agent.mood || 'neutral'}
+              isSpeaking={isLoading}
             />
           </div>
           <div>
