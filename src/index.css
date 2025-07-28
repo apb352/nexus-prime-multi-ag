@@ -134,6 +134,11 @@ body {
   z-index: 2500 !important;
 }
 
+/* Discord controls popover */
+.discord-controls-popover {
+  z-index: 2500 !important;
+}
+
 /* Ensure all radix portals are above chat windows */
 [data-radix-portal] {
   z-index: 2500 !important;

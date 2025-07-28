@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from '@phosphor-icons/react';
 import { useTheme } from '@/hooks/use-theme';
+import { GlobalDiscordSettings } from './GlobalDiscordSettings';
 import { Theme } from '@/lib/types';
 
 const THEMES: { value: Theme; label: string; description: string }[] = [
@@ -14,7 +15,9 @@ export function ThemeSelector() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed top-4 right-4 z-50 flex gap-2">
+      <GlobalDiscordSettings />
+      
       <Select value={theme} onValueChange={(value: Theme) => setTheme(value)}>
         <SelectTrigger className="w-40 bg-card/80 backdrop-blur-sm border-border">
           <div className="flex items-center space-x-2">

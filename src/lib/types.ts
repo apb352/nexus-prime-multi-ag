@@ -1,5 +1,6 @@
 import { VoiceSettings } from './voice-service';
 import { InternetSettings } from './internet-service';
+import { DiscordSettings } from './discord-service';
 
 export interface AIAgent {
   id: string;
@@ -11,6 +12,7 @@ export interface AIAgent {
   isActive: boolean;
   voiceSettings?: VoiceSettings;
   internetSettings?: InternetSettings;
+  discordSettings?: DiscordSettings;
 }
 
 export interface ChatMessage {
@@ -32,6 +34,8 @@ export interface ChatWindow {
   autoSpeak: boolean;
   internetEnabled?: boolean;
   autoSearch?: boolean;
+  discordEnabled?: boolean;
+  discordBridge?: boolean;
 }
 
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';

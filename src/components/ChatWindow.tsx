@@ -10,9 +10,11 @@ import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
+import { DiscordControls } from './DiscordControls';
 import { SpeakingOverlay } from './SpeakingOverlay';
 import { VoiceVisualization } from './VoiceVisualization';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
+import { discordService } from '@/lib/discord-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 
 interface ChatWindowProps {
@@ -261,6 +263,21 @@ export function ChatWindow({
       });
 
       console.log('AI message added successfully');
+
+      // Bridge message to Discord if enabled
+      if (agent.discordSettings?.enabled && agent.discordSettings?.bridgeMessages && discordService.isConnected()) {
+        try {
+          if (agent.discordSettings.webhookUrl) {
+            await discordService.sendWebhookMessage(aiResponse, agent.name);
+          } else {
+            await discordService.sendMessage(aiResponse, agent.name);
+          }
+          console.log('Message bridged to Discord successfully');
+        } catch (discordError) {
+          console.error('Failed to bridge message to Discord:', discordError);
+          // Don't show error to user as this is not critical
+        }
+      }
 
       // Auto-speak the AI response if enabled with speaking overlay
       if (agent.voiceSettings?.enabled && agent.voiceSettings?.autoSpeak) {
@@ -585,6 +602,12 @@ export function ChatWindow({
             autoSearch={autoSearch}
             onInternetToggle={handleInternetToggle}
             onAutoSearchToggle={handleAutoSearchToggle}
+          />
+          
+          <DiscordControls
+            agent={agent}
+            onAgentUpdate={updateAgent}
+            className="mr-2"
           />
           
           <Button

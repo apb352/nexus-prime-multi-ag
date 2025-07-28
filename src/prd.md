@@ -59,6 +59,16 @@
 - **Purpose**: Provide immediate visual feedback during voice synthesis and enhance the sense of living, breathing digital beings
 - **Success Criteria**: Smooth animations synchronized with speech, multiple visualization styles (bars, waves, pulse), responsive to voice levels
 
+### Discord Integration
+- **Functionality**: Connect AI agents to Discord servers and channels with:
+  - Bot token authentication and server/channel selection
+  - Message bridging from agents to Discord channels
+  - Webhook support for custom agent avatars and formatting
+  - Individual agent Discord settings with enable/disable controls
+  - Global Discord configuration with connection status indicators
+- **Purpose**: Extend the reach of AI agents beyond the app into Discord communities and enable seamless cross-platform communication
+- **Success Criteria**: Reliable Discord connection, successful message delivery, clear connection status, per-agent control over Discord integration
+
 ## Design Direction
 
 ### Visual Tone & Identity

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar3D } from './Avatar3D';
 import { AgentEditor } from './AgentEditor';
 import { AIAgent } from '@/lib/types';
-import { Pencil } from '@phosphor-icons/react';
+import { Pencil, DiscordLogo, SpeakerHigh, Globe } from '@phosphor-icons/react';
 
 interface AgentCardProps {
   agent: AIAgent;
@@ -86,6 +86,25 @@ export function AgentCard({ agent, onClick, onEdit }: AgentCardProps) {
                 {agent.personality}
               </p>
             )}
+            
+            {/* Feature indicators */}
+            <div className="flex justify-center gap-2 mt-2">
+              {agent.voiceSettings?.enabled && (
+                <Badge variant="outline" className="text-xs" title="Voice enabled">
+                  <SpeakerHigh className="w-3 h-3" />
+                </Badge>
+              )}
+              {agent.internetSettings?.enabled && (
+                <Badge variant="outline" className="text-xs" title="Internet access enabled">
+                  <Globe className="w-3 h-3" />
+                </Badge>
+              )}
+              {agent.discordSettings?.enabled && (
+                <Badge variant="outline" className="text-xs" title="Discord integration enabled">
+                  <DiscordLogo className="w-3 h-3" />
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </Card>
