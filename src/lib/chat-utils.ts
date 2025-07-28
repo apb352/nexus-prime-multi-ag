@@ -32,10 +32,10 @@ export async function createEnhancedChatPrompt(
   const cleanPersonality = (agentPersonality || 'helpful').replace(/[^\w\s]/g, '').trim() || 'helpful';
   const cleanMood = (agentMood || 'friendly').replace(/[^\w\s]/g, '').trim() || 'friendly';
   
-  // Ultra-clean user message to avoid content filters
+  // Clean user message to avoid content filters (less aggressive)
   const cleanUserMessage = userMessage
     .replace(/[^\w\s.,?!-]/g, ' ')
-    .replace(/\b(ignore|override|system|prompt|instruction|rule|policy|filter|bypass|act as|pretend|roleplay|simulate)\b/gi, '')
+    .replace(/\b(ignore previous|override system|system prompt|instruction prompt|rule prompt|policy prompt|filter prompt|bypass|act as if|pretend to be|roleplay as|simulate being)\b/gi, '')
     .replace(/[{}[\]<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -50,6 +50,9 @@ export async function createEnhancedChatPrompt(
       
       // Check if this message might benefit from internet search
       if (internetService.shouldSearchInternet(cleanUserMessage) || autoSearch) {
+        console.log('Internet search triggered for:', cleanUserMessage);
+        console.log('Should search result:', internetService.shouldSearchInternet(cleanUserMessage));
+        console.log('Auto search enabled:', autoSearch);
         console.log('Attempting internet search for:', cleanUserMessage);
         
         // Check for weather queries first
@@ -106,21 +109,21 @@ export async function createEnhancedChatPrompt(
   
   if (hasInternetContext) {
     console.log('Creating prompt with internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please help the user with their question using the available information.
+    prompt = `You are ${cleanAgentName}, a helpful AI assistant with access to current information. Please answer the user's question using the provided up-to-date information.
 
-Available information:
+Current Information Available:
 ${internetContext}
 
-User question: ${cleanUserMessage}
+User Question: ${cleanUserMessage}
 
-Please provide a helpful response.`;
+Instructions: Use the current information provided above to give an accurate, helpful response. If the information directly answers the question, provide a clear answer based on that data.`;
   } else {
     console.log('Creating basic prompt without internet context');
-    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please help the user with their question.
+    prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please help the user with their question based on your knowledge.
 
-User question: ${cleanUserMessage}
+User Question: ${cleanUserMessage}
 
-Please provide a helpful response.`;
+Please provide a helpful response based on your training knowledge.`;
   }
   
   return {
@@ -142,16 +145,16 @@ export function createBasicChatPrompt(
   const cleanAgentName = (agentName || 'Assistant').replace(/[^\w\s]/g, '').trim() || 'Assistant';
   const cleanUserMessage = userMessage
     .replace(/[^\w\s.,?!-]/g, ' ')
-    .replace(/\b(ignore|override|system|prompt|instruction|rule|policy|filter|bypass|act as|pretend|roleplay|simulate)\b/gi, '')
+    .replace(/\b(ignore previous|override system|system prompt|instruction prompt|rule prompt|policy prompt|filter prompt|bypass|act as if|pretend to be|roleplay as|simulate being)\b/gi, '')
     .replace(/[{}[\]<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   
-  const prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please help the user with their question.
+  const prompt = `You are ${cleanAgentName}, a helpful AI assistant. Please answer the user's question based on your knowledge.
 
-User question: ${cleanUserMessage}
+User Question: ${cleanUserMessage}
 
-Please provide a helpful response.`;
+Please provide a helpful response based on your training knowledge.`;
   
   return prompt;
 }
@@ -160,16 +163,16 @@ Please provide a helpful response.`;
  * Validate and clean user message to avoid content filtering
  */
 export function cleanUserMessage(message: string): string {
-  // Ultra-conservative cleaning to avoid any content filtering
+  // Less aggressive cleaning to preserve legitimate words like "current", "latest", etc.
   let cleaned = message.trim()
     .replace(/[^\w\s\?\.\!\,\'\"\-\:\;\(\)]/g, ' ') // Keep only safe characters
     .replace(/\s+/g, ' ') // Normalize whitespace
-    .substring(0, 500); // Shorter length limit for safety
+    .substring(0, 1000); // Increased length limit
   
-  // Remove any patterns that might trigger content filters
+  // Remove only very specific patterns that might trigger content filters
   cleaned = cleaned
-    .replace(/\b(ignore|override|system|prompt|instruction|rule|policy|filter|bypass)\b/gi, '')
-    .replace(/\b(act as|pretend|roleplay|simulate|jailbreak|hack)\b/gi, '')
+    .replace(/\b(ignore previous|override system|system prompt|instruction prompt|rule prompt|policy prompt|filter prompt|bypass filter|hack system)\b/gi, '')
+    .replace(/\b(act as if|pretend to be|roleplay as|simulate being)\b/gi, '')
     .replace(/[{}[\]<>]/g, ' ') // Remove brackets
     .replace(/\s+/g, ' ')
     .trim();

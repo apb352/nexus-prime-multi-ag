@@ -152,6 +152,21 @@ class InternetService {
           timestamp: new Date().toISOString()
         }
       ];
+    } else if (lowerQuery.includes('president') || lowerQuery.includes('current president') || lowerQuery.includes('who is president')) {
+      mockResults = [
+        {
+          title: `Current President of the United States - 2024`,
+          url: `https://whitehouse.gov/current-president`,
+          snippet: `Joe Biden is the 46th and current President of the United States, serving since January 20, 2021. Updated information about the current administration and presidency.`,
+          timestamp: new Date().toISOString()
+        },
+        {
+          title: `Presidential Information - Current Administration`,
+          url: `https://gov.example.com/president-info`,
+          snippet: `Official information about the current U.S. President, administration, and executive branch leadership. Regularly updated governmental data.`,
+          timestamp: new Date().toISOString()
+        }
+      ];
     } else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('current') || lowerQuery.includes('today')) {
       const topic = query.replace(/news|latest|current|today|about/gi, '').trim();
       mockResults = [
@@ -395,11 +410,27 @@ class InternetService {
       'how\'s the weather', 'what\'s the weather',
       'tell me about', 'information about', 'details about',
       'update on', 'status of', 'price of', 'stock price',
-      'happening in', 'events in'
+      'happening in', 'events in', 'president', 'current president',
+      'who is the', 'what is the current', 'now serving as'
     ];
 
     const lowerMessage = message.toLowerCase();
-    return searchIndicators.some(indicator => lowerMessage.includes(indicator));
+    
+    // Check for exact matches first
+    for (const indicator of searchIndicators) {
+      if (lowerMessage.includes(indicator)) {
+        console.log(`Internet search triggered by indicator: "${indicator}" in message: "${message}"`);
+        return true;
+      }
+    }
+    
+    // Additional patterns for president queries
+    if (lowerMessage.match(/\b(president|leader|commander|chief|elected)\b/)) {
+      console.log(`Internet search triggered by government/leadership pattern in message: "${message}"`);
+      return true;
+    }
+    
+    return false;
   }
 
   /**

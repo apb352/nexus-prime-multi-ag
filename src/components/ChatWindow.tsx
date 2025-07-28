@@ -165,6 +165,9 @@ export function ChatWindow({
         });
         
         console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
+        console.log('Internet enabled:', internetEnabled, 'Auto search:', autoSearch);
+        console.log('Prompt summary:', promptResult.internetSummary);
+        console.log('Final prompt (first 300 chars):', promptResult.prompt.substring(0, 300));
         
         // Create the spark prompt properly
         const finalPrompt = spark.llmPrompt`${promptResult.prompt}`;
