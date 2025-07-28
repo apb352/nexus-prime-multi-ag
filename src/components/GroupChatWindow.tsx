@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { X, Minus, Send, Users, Play, Pause, StopCircle } from '@phosphor-icons/react';
+import { X, Minus, Send, Users, Play, Pause, StopCircle, SpeakerHigh } from '@phosphor-icons/react';
 import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
@@ -13,6 +13,7 @@ import { useAbortManager } from '@/hooks/use-abort-manager';
 import { Avatar3D } from './Avatar3D';
 import { GroupAgentManager } from './GroupAgentManager';
 import { InternetControls } from './InternetControls';
+import { VoiceVisualization } from './VoiceVisualization';
 import { internetService } from '@/lib/internet-service';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -52,6 +53,8 @@ export function GroupChatWindow({
   const [internetEnabled, setInternetEnabled] = useState(window.internetEnabled ?? false);
   const [autoSearch, setAutoSearch] = useState(window.autoSearch ?? false);
   const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -508,7 +511,7 @@ export function GroupChatWindow({
                 className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] rounded-lg p-3 relative ${
                     msg.sender === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted'
@@ -522,6 +525,14 @@ export function GroupChatWindow({
                       : undefined
                   }
                 >
+                  {/* Voice visualization for AI messages */}
+                  {agent && agent.voiceSettings?.enabled && (
+                    <VoiceVisualization
+                      isActive={isSpeaking && speakingMessageId === msg.id}
+                      variant="floating"
+                    />
+                  )}
+                  
                   {agent && (
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-4 h-4">
@@ -531,12 +542,20 @@ export function GroupChatWindow({
                           isActive={true}
                           size={16}
                           mood={agent.mood || 'neutral'}
-                          isSpeaking={false}
+                          isSpeaking={isSpeaking && speakingMessageId === msg.id}
                         />
                       </div>
                       <span className="text-xs font-semibold" style={{ color: agent.color }}>
                         {agent.name}
                       </span>
+                      
+                      {/* Global voice indicator in agent name area */}
+                      {agent.voiceSettings?.enabled && isSpeaking && speakingMessageId === msg.id && (
+                        <VoiceVisualization
+                          isActive={true}
+                          variant="inline"
+                        />
+                      )}
                     </div>
                   )}
                   
@@ -544,9 +563,25 @@ export function GroupChatWindow({
                     {msg.content}
                   </p>
                   
-                  <p className="text-xs opacity-70 mt-1">
-                    {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs opacity-70">
+                      {formatDistanceToNow(msg.timestamp, { addSuffix: true })}
+                    </p>
+                    
+                    {/* Manual speak button for AI messages */}
+                    {agent && agent.voiceSettings?.enabled && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {/* TODO: Add manual speak function */}}
+                        disabled={isSpeaking}
+                        className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                        title="Speak this message"
+                      >
+                        <SpeakerHigh size={12} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -554,7 +589,13 @@ export function GroupChatWindow({
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+              <div className="bg-muted rounded-lg p-3 max-w-[80%] relative">
+                {/* Voice visualization for group thinking */}
+                <VoiceVisualization
+                  isActive={false}
+                  variant="floating"
+                />
+                
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
@@ -562,6 +603,12 @@ export function GroupChatWindow({
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
                   </div>
                   <span className="text-xs text-muted-foreground">Agents are thinking...</span>
+                  
+                  {/* Show group voice prep indicator */}
+                  <VoiceVisualization
+                    isActive={false}
+                    variant="inline"
+                  />
                 </div>
               </div>
             </div>

@@ -156,10 +156,59 @@ body {
   100% { transform: translateY(100vh); opacity: 0; }
 }
 
+@keyframes voice-bars {
+  0%, 100% { 
+    transform: scaleY(0.3);
+    opacity: 0.5;
+  }
+  50% { 
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes voice-wave {
+  0%, 100% {
+    d: path("M 0 12 Q 10 8 20 12 Q 30 16 40 12");
+  }
+  25% {
+    d: path("M 0 12 Q 10 16 20 12 Q 30 8 40 12");
+  }
+  50% {
+    d: path("M 0 12 Q 10 6 20 12 Q 30 18 40 12");
+  }
+  75% {
+    d: path("M 0 12 Q 10 18 20 12 Q 30 6 40 12");
+  }
+}
+
+@keyframes voice-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scale(1.4);
+    opacity: 1;
+  }
+}
+
 .animate-glow-pulse {
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
 .animate-matrix-rain {
   animation: matrix-rain 4s linear infinite;
+}
+
+.animate-voice-bars {
+  animation: voice-bars 0.8s ease-in-out infinite;
+}
+
+.animate-voice-wave {
+  animation: voice-wave 1.2s ease-in-out infinite;
+}
+
+.animate-voice-pulse {
+  animation: voice-pulse 1s ease-in-out infinite;
 }

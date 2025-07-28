@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Minus, Send, Settings } from '@phosphor-icons/react';
+import { X, Minus, Send, Settings, SpeakerHigh } from '@phosphor-icons/react';
 import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
@@ -11,6 +11,7 @@ import { Avatar3D } from './Avatar3D';
 import { VoiceControls } from './VoiceControls';
 import { InternetControls } from './InternetControls';
 import { SpeakingOverlay } from './SpeakingOverlay';
+import { VoiceVisualization } from './VoiceVisualization';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 
@@ -49,6 +50,7 @@ export function ChatWindow({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSpeakingOverlay, setShowSpeakingOverlay] = useState(false);
   const [voiceLevel, setVoiceLevel] = useState(0);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   
   // Update internet settings when agent changes
   useEffect(() => {
@@ -252,7 +254,7 @@ export function ChatWindow({
       }
       
       // Add AI message
-      addMessage(agent.id, {
+      const aiMessage = addMessage(agent.id, {
         content: aiResponse,
         sender: 'ai',
         agentId: agent.id
@@ -266,6 +268,7 @@ export function ChatWindow({
           if (agent.voiceSettings?.profile) {
             setIsSpeaking(true);
             setShowSpeakingOverlay(true);
+            setSpeakingMessageId(aiMessage.id);
             
             // Enhanced voice synthesis with lip sync
             await voiceService.speakWithLipSync(
@@ -275,11 +278,13 @@ export function ChatWindow({
             );
             
             setIsSpeaking(false);
+            setSpeakingMessageId(null);
             setTimeout(() => setShowSpeakingOverlay(false), 500);
           }
         } catch (error) {
           console.error('Voice synthesis failed:', error);
           setIsSpeaking(false);
+          setSpeakingMessageId(null);
           setShowSpeakingOverlay(false);
         }
       }
@@ -331,6 +336,7 @@ export function ChatWindow({
           if (agent.voiceSettings?.profile) {
             setIsSpeaking(true);
             setShowSpeakingOverlay(true);
+            setSpeakingMessageId(null); // Error messages don't get specific IDs
             
             await voiceService.speakWithLipSync(
               errorMessage, 
@@ -339,11 +345,13 @@ export function ChatWindow({
             );
             
             setIsSpeaking(false);
+            setSpeakingMessageId(null);
             setTimeout(() => setShowSpeakingOverlay(false), 500);
           }
         } catch (voiceError) {
           console.error('Voice synthesis failed:', voiceError);
           setIsSpeaking(false);
+          setSpeakingMessageId(null);
           setShowSpeakingOverlay(false);
         }
       }
@@ -355,6 +363,33 @@ export function ChatWindow({
   const handleWindowClick = () => {
     // Bring window to front
     setZIndex(1500 + Date.now() % 1000);
+  };
+
+  const handleManualSpeak = async (message: ChatMessage) => {
+    if (!agent.voiceSettings?.enabled || !agent.voiceSettings?.profile || isSpeaking) {
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      setShowSpeakingOverlay(true);
+      setSpeakingMessageId(message.id);
+      
+      await voiceService.speakWithLipSync(
+        message.content, 
+        agent.voiceSettings.profile,
+        (level: number) => setVoiceLevel(level)
+      );
+      
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+      setTimeout(() => setShowSpeakingOverlay(false), 500);
+    } catch (error) {
+      console.error('Manual voice synthesis failed:', error);
+      setIsSpeaking(false);
+      setSpeakingMessageId(null);
+      setShowSpeakingOverlay(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -508,8 +543,18 @@ export function ChatWindow({
               isSpeaking={isSpeaking || isLoading}
             />
           </div>
-          <div>
+          <div className="flex flex-col">
             <h3 className="font-semibold text-foreground">{agent.name}</h3>
+            {/* Global voice indicator in header */}
+            {agent.voiceSettings?.enabled && isSpeaking && (
+              <VoiceVisualization
+                isActive={true}
+                variant="embedded"
+                className="mt-1"
+              />
+            )}
+          </div>
+        </div>
             <p className="text-xs text-muted-foreground">{agent.mood}</p>
           </div>
         </div>
@@ -585,7 +630,7 @@ export function ChatWindow({
             className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative ${
                 msg.sender === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'border border-border'
@@ -595,10 +640,45 @@ export function ChatWindow({
                 borderColor: msg.sender === 'ai' ? agent.color : undefined
               }}
             >
+              {/* Voice visualization for AI messages */}
+              {msg.sender === 'ai' && agent.voiceSettings?.enabled && (
+                <VoiceVisualization
+                  isActive={isSpeaking && speakingMessageId === msg.id}
+                  variant="floating"
+                />
+              )}
+              
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              <p className="text-xs opacity-70 mt-1">
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </p>
+              
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs opacity-70">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  {/* Manual speak button for AI messages */}
+                  {msg.sender === 'ai' && agent.voiceSettings?.enabled && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleManualSpeak(msg)}
+                      disabled={isSpeaking}
+                      className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                      title="Speak this message"
+                    >
+                      <SpeakerHigh size={12} />
+                    </Button>
+                  )}
+                  
+                  {/* Inline voice indicator for currently speaking message */}
+                  {msg.sender === 'ai' && agent.voiceSettings?.enabled && isSpeaking && speakingMessageId === msg.id && (
+                    <VoiceVisualization
+                      isActive={true}
+                      variant="inline"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -606,16 +686,34 @@ export function ChatWindow({
         {isLoading && (
           <div className="flex justify-start">
             <div
-              className="px-4 py-2 rounded-lg border border-border"
+              className="px-4 py-2 rounded-lg border border-border relative"
               style={{
                 backgroundColor: `${agent.color}20`,
                 borderColor: agent.color
               }}
             >
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              {/* Voice visualization for loading */}
+              {agent.voiceSettings?.enabled && (
+                <VoiceVisualization
+                  isActive={false}
+                  variant="floating"
+                />
+              )}
+              
+              <div className="flex items-center gap-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                </div>
+                
+                {/* Show thinking indicator with voice prep */}
+                {agent.voiceSettings?.enabled && (
+                  <VoiceVisualization
+                    isActive={false}
+                    variant="inline"
+                  />
+                )}
               </div>
             </div>
           </div>
