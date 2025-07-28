@@ -228,6 +228,7 @@ export function ChatWindow({
             }
           }
         }
+      }
       
       console.log('Received AI response type:', typeof aiResponse);
       console.log('AI response length:', aiResponse?.length || 0);
