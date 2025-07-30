@@ -618,13 +618,6 @@ export function ChatWindow({
     setAutoSearch(enabled);
   };
 
-  const handleVoiceSettingsChange = (newSettings: VoiceSettings) => {
-    updateAgent({
-      ...agent,
-      voiceSettings: newSettings
-    });
-  };
-
   const handleSpeakMessage = (content: string) => {
     // This is called by VoiceControls for testing voice
     if (agent.voiceSettings?.enabled && agent.voiceSettings?.profile) {
