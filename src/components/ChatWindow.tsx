@@ -618,17 +618,6 @@ export function ChatWindow({
     setAutoSearch(enabled);
   };
 
-  const handleSpeakMessage = (content: string) => {
-    // This is called by VoiceControls for testing voice
-    if (agent.voiceSettings?.enabled && agent.voiceSettings?.profile) {
-      voiceService.speakWithLipSync(
-        content,
-        agent.voiceSettings.profile,
-        () => {} // No voice level tracking for test speak
-      );
-    }
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
