@@ -618,19 +618,6 @@ export function ChatWindow({
     setAutoSearch(enabled);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isResizing) return;
-    
-    const rect = windowRef.current?.getBoundingClientRect();
-    if (rect) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - window.position.x,
-        y: e.clientY - window.position.y
-      });
-    }
-  };
-
   // Handle mouse events for dragging and resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
