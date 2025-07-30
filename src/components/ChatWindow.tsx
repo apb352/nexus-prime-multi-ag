@@ -618,13 +618,6 @@ export function ChatWindow({
     setAutoSearch(enabled);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isResizing) return;
     
