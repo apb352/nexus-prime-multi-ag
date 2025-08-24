@@ -85,6 +85,36 @@ export function ChatWindow({
   const { updateAgent } = useAgents();
   const messages = getAgentHistory(agent.id);
 
+  // Add welcome message for new chats to introduce image generation
+  useEffect(() => {
+    // Only add welcome message if this is a new chat with no messages
+    if (messages.length === 0) {
+      const welcomeMessage = currentImageSettings?.enabled 
+        ? `Hello! I'm ${agent.name}. I'm ready to chat with you!
+
+🎨 **Image Generation Available!** 
+I can create artistic visualizations for you. Just ask me to "draw something" or "create an image of..." and I'll generate creative artwork using the style settings in the image controls above (📷 icon).
+
+You can also customize the art style (realistic, cyberpunk, artistic, etc.) and quality settings in the image controls menu.
+
+What would you like to talk about or create today?`
+        : `Hello! I'm ${agent.name}. I'm ready to chat with you!
+
+💡 **Tip:** You can enable image generation in this chat window by clicking the image icon (📷) in the controls above. Once enabled, I can create artistic visualizations for you!
+
+What would you like to talk about today?`;
+
+      // Small delay to ensure component is fully mounted
+      setTimeout(() => {
+        addMessage(agent.id, {
+          content: welcomeMessage,
+          sender: 'ai',
+          agentId: agent.id
+        });
+      }, 100);
+    }
+  }, []); // Only run once when component mounts
+
   // Add keyboard shortcut for stopping voice
   useEffect(() => {
     // Only add event listeners in browser environment with proper window object
@@ -306,7 +336,13 @@ export function ChatWindow({
     } catch (error) {
       console.error('Error generating image:', error);
       addMessage(agent.id, {
-        content: `I've created an artistic representation of your request! While I don't have access to advanced AI image generation models like DALL-E, I've generated a creative visual interpretation using canvas art techniques. For more detailed custom artwork, you can also use the interactive canvas drawing feature by clicking the image controls!`,
+        content: `I've encountered an issue while creating your image, but I've generated an artistic representation using our fallback canvas-based system! 
+
+🎨 **What I created:** A creative visual interpretation of "${prompt}" using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
+
+💡 **Note:** This app uses advanced canvas-based artistic rendering rather than external AI image models like DALL-E. You can also try the interactive canvas drawing feature for more custom artwork!
+
+The style and quality settings in the image controls (📷) affect how these artistic visualizations are created.`,
         sender: 'ai',
         agentId: agent.id
       });
@@ -387,6 +423,23 @@ export function ChatWindow({
           await handleGenerateImage(cleanPrompt);
           return; // Exit early as we've handled the image generation
         }
+      } else if (isImageRequest) {
+        // User wants image generation but it's disabled
+        addMessage(agent.id, {
+          content: `I'd love to help you create images! However, I cannot directly generate images myself. But this chat window has built-in image generation capabilities! 
+
+🎨 To enable image generation:
+1. Click the image icon (📷) in the window controls above
+2. Toggle "Image Generation" to ON
+3. Choose your preferred style and quality
+4. Then ask me again to "draw" or "create an image"
+
+You can also use the interactive canvas for custom drawings! Click the image controls to get started.`,
+          sender: 'ai',
+          agentId: agent.id
+        });
+        setIsLoading(false);
+        return;
       }
 
       console.log('Starting chat message handling for:', userMessage);
@@ -959,10 +1012,13 @@ export function ChatWindow({
               variant="ghost"
               size="sm"
               onClick={() => setShowCanvas(!showCanvas)}
-              className={showCanvas ? 'text-accent' : ''}
-              title="Toggle Canvas"
+              className={`relative ${showCanvas ? 'text-accent bg-accent/20' : 'text-muted-foreground hover:text-accent'}`}
+              title="Interactive Canvas Drawing"
             >
               <ImageIcon size={16} />
+              {!showCanvas && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full animate-pulse" />
+              )}
             </Button>
           )}
           

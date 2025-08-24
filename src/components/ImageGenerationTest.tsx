@@ -78,14 +78,22 @@ export function ImageGenerationTest() {
 
         {generatedImage && (
           <div className="mt-4">
-            <img 
-              src={generatedImage} 
-              alt="Generated test image" 
-              className="w-full border rounded"
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              Style: {style}, Quality: {quality}
-            </p>
+            <div className="relative">
+              <img 
+                src={generatedImage} 
+                alt="Generated test image" 
+                className="w-full border rounded"
+              />
+              <div className="absolute top-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
+                {style} • {quality}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+              <p><strong>Style:</strong> {style}</p>
+              <p><strong>Quality:</strong> {quality}</p>
+              <p><strong>Prompt:</strong> "A beautiful sunset over mountains"</p>
+              <p className="text-accent">✨ Generated using canvas-based artistic rendering</p>
+            </div>
           </div>
         )}
       </CardContent>

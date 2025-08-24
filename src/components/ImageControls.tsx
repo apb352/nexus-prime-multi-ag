@@ -55,10 +55,11 @@ export function ImageControls({
               ? 'text-accent hover:text-accent-foreground hover:bg-accent/20' 
               : 'text-muted-foreground hover:text-foreground'
           }`}
+          title={settings.enabled ? "Image generation enabled - Click to configure" : "Enable image generation"}
         >
           <ImageIcon size={16} />
           {settings.enabled && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
           )}
         </Button>
       </PopoverTrigger>
@@ -176,7 +177,12 @@ export function ImageControls({
               </div>
 
               <div className="text-xs text-muted-foreground border-t pt-2">
-                Agents can create images and use canvas for drawing when enabled
+                <div className="space-y-1">
+                  <div className="font-medium text-accent">💡 How to generate images:</div>
+                  <div>• Type "draw me a sunset" or "create an image of..."</div>
+                  <div>• Use the Quick Generate button above</div>
+                  <div>• Try the interactive canvas for custom drawings</div>
+                </div>
               </div>
             </>
           )}
