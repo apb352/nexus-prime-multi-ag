@@ -855,7 +855,6 @@ export function ChatWindow({
             )}
           </div>
           <Select value={selectedModel} onValueChange={setSelectedModel}>
-        
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
