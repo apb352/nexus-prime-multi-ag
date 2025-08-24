@@ -1,4 +1,5 @@
 import { useKV } from '@github/spark/hooks';
+import { useMemo } from 'react';
 import { AIAgent } from '@/lib/types';
 import { VOICE_PROFILES } from '@/lib/voice-service';
 import { defaultImageSettings } from '@/lib/image-service';
@@ -172,7 +173,7 @@ export function useAgents() {
   const [agents, setAgents] = useKV<AIAgent[]>('nexus-agents', DEFAULT_AGENTS);
 
   // Ensure all agents have proper voice settings, internet settings, and image settings
-  const normalizedAgents = agents.map(agent => ({
+  const normalizedAgents = useMemo(() => agents.map(agent => ({
     ...agent,
     voiceSettings: agent.voiceSettings || {
       enabled: true,
@@ -191,7 +192,7 @@ export function useAgents() {
       ...defaultImageSettings,
       enabled: true
     }
-  }));
+  })), [agents]);
 
   const updateAgentStatus = (agentId: string, isActive: boolean) => {
     setAgents((currentAgents) =>

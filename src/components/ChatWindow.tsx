@@ -925,7 +925,7 @@ export function ChatWindow({
           />
           
           <ImageControls
-            settings={agent.imageSettings || { enabled: false, canvasEnabled: true, imageGenEnabled: true, maxCanvasSize: 512, imageStyle: 'realistic', quality: 'standard' }}
+            settings={agent.imageSettings!}
             onSettingsChange={handleImageSettingsChange}
             onGenerateImage={handleGenerateImage}
             isGenerating={isGeneratingImage}
