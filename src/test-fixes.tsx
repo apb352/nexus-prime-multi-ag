@@ -13,6 +13,11 @@ export function TestFixes() {
   const testBasicPrompt = async () => {
     setIsLoading(true);
     try {
+      // Check if spark is available
+      if (typeof spark === 'undefined' || !spark.llm || !spark.llmPrompt) {
+        throw new Error('Spark API is not available');
+      }
+      
       // Test basic prompt creation
       const basicPrompt = createBasicChatPrompt(testMessage, 'TestBot', 'friendly', 'cheerful');
       console.log('Basic prompt:', basicPrompt);
@@ -33,6 +38,11 @@ export function TestFixes() {
   const testEnhancedPrompt = async () => {
     setIsLoading(true);
     try {
+      // Check if spark is available
+      if (typeof spark === 'undefined' || !spark.llm || !spark.llmPrompt) {
+        throw new Error('Spark API is not available');
+      }
+      
       // Test enhanced prompt creation
       const enhancedResult = await createEnhancedChatPrompt({
         internetEnabled: false,
@@ -87,6 +97,11 @@ export function TestFixes() {
   const testPresidentQuestion = async () => {
     setIsLoading(true);
     try {
+      // Check if spark is available
+      if (typeof spark === 'undefined' || !spark.llm || !spark.llmPrompt) {
+        throw new Error('Spark API is not available');
+      }
+      
       // Test enhanced prompt with internet enabled for president question
       const enhancedResult = await createEnhancedChatPrompt({
         internetEnabled: true,

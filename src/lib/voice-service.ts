@@ -73,7 +73,7 @@ export class VoiceService {
   private _isSpeaking = false;
 
   constructor() {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
+    if (typeof window !== 'undefined' && window.speechSynthesis && typeof window.speechSynthesis.addEventListener === 'function') {
       this.synthesis = window.speechSynthesis;
       this.initializeVoices();
     }
@@ -90,7 +90,14 @@ export class VoiceService {
       if (this.synthesis.getVoices().length > 0) {
         loadVoices();
       } else {
-        this.synthesis.addEventListener('voiceschanged', loadVoices, { once: true });
+        // Double check that addEventListener exists before using it
+        if (typeof this.synthesis.addEventListener === 'function') {
+          this.synthesis.addEventListener('voiceschanged', loadVoices, { once: true });
+        } else {
+          // Fallback: just resolve without voices
+          this.isInitialized = true;
+          resolve();
+        }
       }
     });
   }
@@ -362,5 +369,71 @@ export class VoiceService {
   }
 }
 
-// Global voice service instance
-export const voiceService = new VoiceService();
+// Lazy-loaded voice service to avoid window access during module initialization
+let voiceServiceInstance: VoiceService | null = null;
+
+function getVoiceService(): VoiceService {
+  if (!voiceServiceInstance) {
+    voiceServiceInstance = new VoiceService();
+  }
+  return voiceServiceInstance;
+}
+
+export const voiceService = {
+  get instance() {
+    return getVoiceService();
+  },
+  
+  // Delegate all methods to the instance
+  async ensureInitialized() {
+    return this.instance.ensureInitialized();
+  },
+  
+  async speak(text: string, voiceProfile?: keyof typeof VOICE_PROFILES, customSettings?: Partial<VoiceSettings>) {
+    return this.instance.speak(text, voiceProfile, customSettings);
+  },
+  
+  async speakInterruptible(text: string, voiceProfile?: keyof typeof VOICE_PROFILES, customSettings?: Partial<VoiceSettings>) {
+    return this.instance.speakInterruptible(text, voiceProfile, customSettings);
+  },
+  
+  stop() {
+    return this.instance.stop();
+  },
+  
+  pause() {
+    return this.instance.pause();
+  },
+  
+  resume() {
+    return this.instance.resume();
+  },
+  
+  get isSpeaking() {
+    return this.instance.isSpeaking;
+  },
+  
+  get isSupported() {
+    return this.instance.isSupported;
+  },
+  
+  getVoices() {
+    return this.instance.getVoices();
+  },
+  
+  setGlobalVolume(volume: number) {
+    return this.instance.setGlobalVolume(volume);
+  },
+  
+  setGlobalRate(rate: number) {
+    return this.instance.setGlobalRate(rate);
+  },
+  
+  setGlobalPitch(pitch: number) {
+    return this.instance.setGlobalPitch(pitch);
+  },
+  
+  isPaused() {
+    return this.instance.isPaused();
+  }
+};

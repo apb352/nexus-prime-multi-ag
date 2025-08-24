@@ -10,14 +10,14 @@ export function testWindowAccess() {
   }
   
   // Test 2: Event listener availability
-  if (typeof window !== 'undefined' && window.addEventListener) {
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     console.log('✓ window.addEventListener is available');
   } else {
     console.warn('✗ window.addEventListener is not available');
   }
   
   // Test 3: Custom event dispatch availability
-  if (typeof window !== 'undefined' && window.dispatchEvent) {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
     console.log('✓ window.dispatchEvent is available');
   } else {
     console.warn('✗ window.dispatchEvent is not available');
@@ -34,8 +34,8 @@ export function testWindowAccess() {
   return true;
 }
 
-// Run test on module load in development
-if (import.meta.env.DEV) {
+// Run test on module load in development with proper guards
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   setTimeout(() => {
     testWindowAccess();
   }, 1000);

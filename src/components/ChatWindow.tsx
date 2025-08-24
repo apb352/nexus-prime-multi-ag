@@ -88,8 +88,8 @@ export function ChatWindow({
 
   // Add keyboard shortcut for stopping voice
   useEffect(() => {
-    // Only add event listeners in browser environment
-    if (typeof window === 'undefined') return;
+    // Only add event listeners in browser environment with proper window object
+    if (typeof window === 'undefined' || !window.addEventListener) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape key stops voice synthesis
@@ -98,12 +98,13 @@ export function ChatWindow({
         handleStopSpeaking();
       }
     };
-
-    // Only add event listeners in browser environment
-    if (typeof window === 'undefined') return;
     
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener('keydown', handleKeyDown);
+      }
+    };
   }, [isSpeaking]);
 
   useEffect(() => {

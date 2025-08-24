@@ -97,8 +97,8 @@ function SidebarProvider({
 
   // Adds a keyboard shortcut to toggle the sidebar.
   useEffect(() => {
-    // Only add event listeners in browser environment
-    if (typeof window === 'undefined') return;
+    // Only add event listeners in browser environment with proper window object
+    if (typeof window === 'undefined' || !window.addEventListener) return;
     
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -109,12 +109,13 @@ function SidebarProvider({
         toggleSidebar()
       }
     }
-
-    // Only add event listeners in browser environment
-    if (typeof window === 'undefined') return;
     
     window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
+    return () => {
+      if (typeof window !== 'undefined' && window.removeEventListener) {
+        window.removeEventListener("keydown", handleKeyDown)
+      }
+    };
   }, [toggleSidebar])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
