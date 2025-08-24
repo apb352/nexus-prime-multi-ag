@@ -72,13 +72,52 @@ export class ImageService {
     
     if (!ctx) throw new Error('Canvas not supported');
 
-    canvas.width = Math.min(settings.maxCanvasSize, 512);
-    canvas.height = Math.min(settings.maxCanvasSize, 512);
+    // Adjust canvas size based on quality setting
+    const qualityMultiplier = settings.quality === 'hd' ? 1.5 : 1;
+    const baseSize = Math.min(settings.maxCanvasSize, 512);
+    
+    canvas.width = Math.floor(baseSize * qualityMultiplier);
+    canvas.height = Math.floor(baseSize * qualityMultiplier);
 
     // Generate art based on prompt content and style
     this.generatePromptBasedArt(ctx, canvas, prompt, settings);
 
+    // For HD quality, apply additional processing
+    if (settings.quality === 'hd') {
+      this.enhanceCanvasForHD(ctx, canvas);
+    }
+
     return canvas.toDataURL('image/png');
+  }
+
+  private enhanceCanvasForHD(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Apply post-processing effects for HD quality
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Enhance contrast and saturation for HD effect
+    for (let i = 0; i < data.length; i += 4) {
+      // Enhance contrast
+      data[i] = Math.min(255, Math.max(0, (data[i] - 128) * 1.1 + 128));     // Red
+      data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * 1.1 + 128)); // Green
+      data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * 1.1 + 128)); // Blue
+      
+      // Slightly increase saturation
+      const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      data[i] = Math.min(255, Math.max(0, data[i] + (data[i] - avg) * 0.2));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + (data[i + 1] - avg) * 0.2));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + (data[i + 2] - avg) * 0.2));
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+    
+    // Add subtle sharpening overlay
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
   }
 
   private generatePromptBasedArt(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, prompt: string, settings: ImageSettings) {
@@ -467,6 +506,12 @@ export class ImageService {
       case 'artistic':
         this.addArtisticElements(ctx, canvas);
         break;
+      case 'realistic':
+        this.addRealisticElements(ctx, canvas);
+        break;
+      case 'minimalist':
+        this.addMinimalistElements(ctx, canvas);
+        break;
     }
   }
 
@@ -517,6 +562,68 @@ export class ImageService {
         ctx.fill();
       }
     }
+  }
+
+  private addRealisticElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add subtle textures and realistic lighting effects
+    ctx.globalAlpha = 0.15;
+    
+    // Add texture overlay
+    for (let i = 0; i < 500; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.random() * 1 + 0.5, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    
+    // Add soft lighting effects
+    const lightGradient = ctx.createRadialGradient(
+      canvas.width * 0.3, canvas.height * 0.3, 0,
+      canvas.width * 0.3, canvas.height * 0.3, canvas.width * 0.7
+    );
+    lightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+    lightGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.fillStyle = lightGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.globalAlpha = 1;
+  }
+
+  private addMinimalistElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add clean, geometric elements for minimalist style
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.3;
+    
+    // Add subtle grid lines
+    const gridSize = canvas.width / 8;
+    for (let x = gridSize; x < canvas.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    
+    for (let y = gridSize; y < canvas.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    
+    // Add single accent shape
+    ctx.fillStyle = '#9ca3af';
+    ctx.globalAlpha = 0.2;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, canvas.width / 6, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.globalAlpha = 1;
   }
 
   private addArtisticElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {

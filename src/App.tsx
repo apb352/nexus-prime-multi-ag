@@ -8,6 +8,7 @@ import { EmergencyStop } from '@/components/EmergencyStop';
 import { DiscordStatus } from '@/components/DiscordStatus';
 import { TestFixes } from '@/test-fixes';
 import { EmergencyStopTest } from '@/components/EmergencyStopTest';
+import { ImageGenerationTest } from '@/components/ImageGenerationTest';
 import { useAgents } from '@/hooks/use-agents';
 import { windowManager } from '@/lib/window-manager';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
@@ -190,6 +191,7 @@ function App() {
         <div className="fixed bottom-4 right-4 z-50 space-y-2">
           <EmergencyStopTest />
           <TestFixes />
+          <ImageGenerationTest />
         </div>
       )}
       

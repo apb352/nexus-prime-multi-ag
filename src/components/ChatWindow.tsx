@@ -18,7 +18,7 @@ import { SpeakingOverlay } from './SpeakingOverlay';
 import { VoiceVisualization } from './VoiceVisualization';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { discordService } from '@/lib/discord-service';
-import { ImageService, ImageSettings } from '@/lib/image-service';
+import { ImageService, ImageSettings, defaultImageSettings } from '@/lib/image-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 import { windowManager } from '@/lib/window-manager';
 import { toast } from 'sonner';
@@ -70,12 +70,11 @@ export function ChatWindow({
     style: string;
   }>>([]);
   
-  // Update internet and image settings when agent changes
+  // Update internet settings when agent changes
   useEffect(() => {
     setInternetEnabled(agent.internetSettings?.enabled ?? false);
     setAutoSearch(agent.internetSettings?.autoSearch ?? false);
-    setImageEnabled(agent.imageSettings?.enabled ?? false);
-  }, [agent.internetSettings, agent.imageSettings]);
+  }, [agent.internetSettings]);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -236,7 +235,25 @@ export function ChatWindow({
     }
   };
 
+  // Keep current settings in local state to avoid timing issues
+  const [currentImageSettings, setCurrentImageSettings] = useState<ImageSettings>(
+    agent.imageSettings || defaultImageSettings
+  );
+
+  // Update local state when agent settings change
+  useEffect(() => {
+    if (agent.imageSettings) {
+      setCurrentImageSettings(agent.imageSettings);
+      setImageEnabled(agent.imageSettings.enabled);
+    }
+  }, [agent.imageSettings]);
+
   const handleImageSettingsChange = (newSettings: ImageSettings) => {
+    console.log('Image settings changing from:', currentImageSettings);
+    console.log('Image settings changing to:', newSettings);
+    
+    // Update both local state and agent
+    setCurrentImageSettings(newSettings);
     updateAgent({
       ...agent,
       imageSettings: newSettings
@@ -244,21 +261,27 @@ export function ChatWindow({
     setImageEnabled(newSettings.enabled);
   };
 
-  const handleGenerateImage = async (prompt: string) => {
-    if (!agent.imageSettings?.enabled || isGeneratingImage) return;
+  const handleGenerateImage = async (prompt: string, customSettings?: ImageSettings) => {
+    // Use custom settings if provided, otherwise use current settings
+    const settingsToUse = customSettings || currentImageSettings;
+    
+    console.log('Generating image with settings:', settingsToUse);
+    console.log('Image prompt:', prompt);
+    
+    if (!settingsToUse?.enabled || !settingsToUse?.imageGenEnabled || isGeneratingImage) return;
 
     setIsGeneratingImage(true);
     
     // Add loading message
     addMessage(agent.id, {
-      content: `I'm creating an artistic representation for: "${prompt}". Let me generate a creative visual interpretation for you...`,
+      content: `I'm creating an artistic representation for: "${prompt}". Let me generate a creative visual interpretation using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality...`,
       sender: 'ai',
       agentId: agent.id
     });
     
     try {
       const imageService = ImageService.getInstance();
-      const imageUrl = await imageService.generateImage(prompt, agent.imageSettings);
+      const imageUrl = await imageService.generateImage(prompt, settingsToUse);
       
       if (imageUrl) {
         const newImage = {
@@ -266,14 +289,14 @@ export function ChatWindow({
           url: imageUrl,
           prompt,
           timestamp: new Date(),
-          style: agent.imageSettings.imageStyle
+          style: settingsToUse.imageStyle
         };
         
         setGeneratedImages(prev => [...prev, newImage]);
         
         // Add image message to chat
         addMessage(agent.id, {
-          content: `I've created an artistic representation for you based on: "${prompt}". This is a creative visualization in ${agent.imageSettings.imageStyle} style that captures the essence of your request. For more detailed images, you can also use the canvas drawing feature!`,
+          content: `I've created an artistic representation for you based on: "${prompt}". This is a creative visualization in ${settingsToUse.imageStyle} style with ${settingsToUse.quality} quality that captures the essence of your request. For more detailed images, you can also use the canvas drawing feature!`,
           sender: 'ai',
           agentId: agent.id,
           imageUrl,
@@ -349,7 +372,7 @@ export function ChatWindow({
         userMessage.toLowerCase().includes(keyword)
       );
 
-      if (isImageRequest && agent.imageSettings?.enabled && agent.imageSettings.imageGenEnabled) {
+      if (isImageRequest && currentImageSettings?.enabled && currentImageSettings.imageGenEnabled) {
         // Extract prompt for image generation
         let imagePrompt = userMessage;
         
@@ -925,13 +948,13 @@ export function ChatWindow({
           />
           
           <ImageControls
-            settings={agent.imageSettings!}
+            settings={currentImageSettings}
             onSettingsChange={handleImageSettingsChange}
             onGenerateImage={handleGenerateImage}
             isGenerating={isGeneratingImage}
           />
           
-          {agent.imageSettings?.enabled && agent.imageSettings?.canvasEnabled && (
+          {currentImageSettings?.enabled && currentImageSettings?.canvasEnabled && (
             <Button
               variant="ghost"
               size="sm"
@@ -1100,10 +1123,10 @@ export function ChatWindow({
       </div>
 
       {/* Canvas Drawing Section */}
-      {showCanvas && agent.imageSettings?.enabled && agent.imageSettings?.canvasEnabled && (
+      {showCanvas && currentImageSettings?.enabled && currentImageSettings?.canvasEnabled && (
         <div className="border-t border-border p-4">
           <CanvasDrawing
-            width={Math.min(window.size.width - 32, agent.imageSettings.maxCanvasSize)}
+            width={Math.min(window.size.width - 32, currentImageSettings.maxCanvasSize)}
             height={200}
             onImageCreate={handleCanvasImageCreate}
           />
