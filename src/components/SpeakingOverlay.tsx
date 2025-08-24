@@ -514,7 +514,7 @@ export function SpeakingOverlay({ agent, isVisible, onClose, voiceLevel = 0.5 }:
 
   // Initialize audio context for real-time voice analysis
   useEffect(() => {
-    if (isVisible && !audioContext) {
+    if (isVisible && !audioContext && typeof window !== 'undefined') {
       try {
         const context = new (window.AudioContext || (window as any).webkitAudioContext)();
         const analyserNode = context.createAnalyser();

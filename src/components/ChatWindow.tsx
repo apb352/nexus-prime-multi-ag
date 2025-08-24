@@ -88,6 +88,9 @@ export function ChatWindow({
 
   // Add keyboard shortcut for stopping voice
   useEffect(() => {
+    // Only add event listeners in browser environment
+    if (typeof window === 'undefined') return;
+    
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape key stops voice synthesis
       if (e.key === 'Escape' && isSpeaking) {
@@ -96,6 +99,9 @@ export function ChatWindow({
       }
     };
 
+    // Only add event listeners in browser environment
+    if (typeof window === 'undefined') return;
+    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSpeaking]);
@@ -686,14 +692,17 @@ export function ChatWindow({
       setIsResizing(false);
     };
 
-    if (isDragging || isResizing) {
+    // Only add event listeners in browser environment
+    if (typeof document !== 'undefined' && (isDragging || isResizing)) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      }
     };
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
 
@@ -770,7 +779,8 @@ export function ChatWindow({
       setIsResizing(false);
     };
 
-    if (isDragging || isResizing) {
+    // Only add event listeners in browser environment
+    if (typeof document !== 'undefined' && (isDragging || isResizing)) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -979,9 +989,11 @@ export function ChatWindow({
                     className="max-w-full h-auto rounded-md border border-border cursor-pointer hover:scale-105 transition-transform"
                     onClick={() => {
                       // Open image in fullscreen
-                      const newWindow = window.open();
-                      if (newWindow) {
-                        newWindow.document.write(`<img src="${msg.imageUrl}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
+                      if (typeof window !== 'undefined') {
+                        const newWindow = window.open();
+                        if (newWindow && newWindow.document) {
+                          newWindow.document.write(`<img src="${msg.imageUrl}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
+                        }
                       }
                     }}
                   />

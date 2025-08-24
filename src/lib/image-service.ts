@@ -74,6 +74,11 @@ Return only a data URL or image URL that can be used directly in an img tag.`;
   }
 
   private createPlaceholderImage(prompt: string, settings: ImageSettings): string {
+    // Only create placeholder in browser environment
+    if (typeof document === 'undefined') {
+      throw new Error('Canvas not available in server environment');
+    }
+    
     // Create a canvas with the generated image placeholder
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -153,6 +158,10 @@ Return only a data URL or image URL that can be used directly in an img tag.`;
   }
 
   createCanvas(width: number, height: number): HTMLCanvasElement {
+    if (typeof document === 'undefined') {
+      throw new Error('Canvas not available in server environment');
+    }
+    
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -165,6 +174,11 @@ Return only a data URL or image URL that can be used directly in an img tag.`;
 
   resizeImage(imageUrl: string, maxWidth: number, maxHeight: number): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (typeof document === 'undefined') {
+        reject(new Error('Image resize not available in server environment'));
+        return;
+      }
+      
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');

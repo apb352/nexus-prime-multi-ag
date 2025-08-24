@@ -29,6 +29,8 @@ export function ImageViewer({ images, onRemoveImage, className = '' }: ImageView
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
 
   const downloadImage = (image: GeneratedImage) => {
+    if (typeof document === 'undefined') return;
+    
     const link = document.createElement('a');
     link.download = `ai-generated-${image.id}.png`;
     link.href = image.url;

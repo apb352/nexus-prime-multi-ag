@@ -78,7 +78,7 @@ export function CanvasDrawing({
 
   const downloadImage = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || typeof document === 'undefined') return;
 
     const link = document.createElement('a');
     link.download = `canvas-drawing-${Date.now()}.png`;

@@ -128,12 +128,18 @@ export function DiscordBotSetup({ onClose, onComplete }: DiscordBotSetupProps) {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard!');
+    } else {
+      toast.error('Clipboard not available');
+    }
   };
 
   const openDiscordDeveloperPortal = () => {
-    window.open('https://discord.com/developers/applications', '_blank');
+    if (typeof window !== 'undefined') {
+      window.open('https://discord.com/developers/applications', '_blank');
+    }
   };
 
   const generateInviteLink = () => {
@@ -376,7 +382,11 @@ export function DiscordBotSetup({ onClose, onComplete }: DiscordBotSetupProps) {
                       <Copy className="w-4 h-4" />
                     </Button>
                     <Button
-                      onClick={() => window.open(generateInviteLink(), '_blank')}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          window.open(generateInviteLink(), '_blank');
+                        }
+                      }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Invite Bot

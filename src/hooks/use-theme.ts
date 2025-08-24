@@ -5,7 +5,9 @@ export function useTheme() {
   const [theme, setTheme] = useKV<Theme>('nexus-theme', 'cyberpunk');
 
   const applyTheme = (newTheme: Theme) => {
-    document.documentElement.setAttribute('data-theme', newTheme);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', newTheme);
+    }
     setTheme(newTheme);
   };
 

@@ -127,7 +127,8 @@ export function GroupChatWindow({
   };
 
   useEffect(() => {
-    if (isDragging || isResizing) {
+    // Only add event listeners in browser environment
+    if (typeof document !== 'undefined' && (isDragging || isResizing)) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {

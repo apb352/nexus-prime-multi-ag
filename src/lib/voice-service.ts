@@ -73,8 +73,10 @@ export class VoiceService {
   private _isSpeaking = false;
 
   constructor() {
-    this.synthesis = window.speechSynthesis;
-    this.initializeVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      this.synthesis = window.speechSynthesis;
+      this.initializeVoices();
+    }
   }
 
   private async initializeVoices(): Promise<void> {

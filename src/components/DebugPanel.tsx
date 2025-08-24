@@ -34,9 +34,19 @@ export function DebugPanel() {
       
       // Check environment
       info += '\n3. Environment:\n';
-      info += `   - User Agent: ${navigator.userAgent.substring(0, 50)}...\n`;
-      info += `   - Location: ${window.location.href}\n`;
-      info += `   - Protocol: ${window.location.protocol}\n`;
+      if (typeof navigator !== 'undefined' && navigator.userAgent) {
+        info += `   - User Agent: ${navigator.userAgent.substring(0, 50)}...\n`;
+      } else {
+        info += `   - User Agent: Not available\n`;
+      }
+      
+      if (typeof window !== 'undefined' && window.location) {
+        info += `   - Location: ${window.location.href}\n`;
+        info += `   - Protocol: ${window.location.protocol}\n`;
+      } else {
+        info += `   - Location: Not available (SSR)\n`;
+        info += `   - Protocol: Not available (SSR)\n`;
+      }
       
     } catch (error) {
       info += `\nError during debug check: ${error instanceof Error ? error.message : 'Unknown error'}\n`;
