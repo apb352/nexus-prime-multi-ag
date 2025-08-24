@@ -66,23 +66,30 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
 };
 
 export class VoiceService {
-  private synthesis: SpeechSynthesis;
+  private synthesis: SpeechSynthesis | null = null;
   private voices: SpeechSynthesisVoice[] = [];
   private isInitialized = false;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private _isSpeaking = false;
 
   constructor() {
-    if (typeof window !== 'undefined' && window.speechSynthesis && typeof window.speechSynthesis.addEventListener === 'function') {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
       this.synthesis = window.speechSynthesis;
       this.initializeVoices();
     }
   }
 
   private async initializeVoices(): Promise<void> {
+    if (!this.synthesis) {
+      this.isInitialized = true;
+      return Promise.resolve();
+    }
+
     return new Promise((resolve) => {
       const loadVoices = () => {
-        this.voices = this.synthesis.getVoices();
+        if (this.synthesis) {
+          this.voices = this.synthesis.getVoices();
+        }
         this.isInitialized = true;
         resolve();
       };
@@ -90,7 +97,7 @@ export class VoiceService {
       if (this.synthesis.getVoices().length > 0) {
         loadVoices();
       } else {
-        // Double check that addEventListener exists before using it
+        // Check if addEventListener exists before using it
         if (typeof this.synthesis.addEventListener === 'function') {
           this.synthesis.addEventListener('voiceschanged', loadVoices, { once: true });
         } else {
@@ -155,7 +162,7 @@ export class VoiceService {
 
   public speak(text: string, profile: VoiceProfile): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!text.trim()) {
+      if (!this.synthesis || !text.trim()) {
         resolve();
         return;
       }
@@ -207,7 +214,7 @@ export class VoiceService {
     onVoiceLevel?: (level: number) => void
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!text.trim()) {
+      if (!this.synthesis || !text.trim()) {
         resolve();
         return;
       }
@@ -347,25 +354,31 @@ export class VoiceService {
 
   public stop(): void {
     console.log('Voice service stop called');
-    this.synthesis.cancel();
+    if (this.synthesis) {
+      this.synthesis.cancel();
+    }
     this._isSpeaking = false;
     this.currentUtterance = null;
   }
 
   public pause(): void {
-    this.synthesis.pause();
+    if (this.synthesis) {
+      this.synthesis.pause();
+    }
   }
 
   public resume(): void {
-    this.synthesis.resume();
+    if (this.synthesis) {
+      this.synthesis.resume();
+    }
   }
 
   public isSpeaking(): boolean {
-    return this._isSpeaking || this.synthesis.speaking;
+    return this._isSpeaking || (this.synthesis ? this.synthesis.speaking : false);
   }
 
   public isPaused(): boolean {
-    return this.synthesis.paused;
+    return this.synthesis ? this.synthesis.paused : false;
   }
 }
 
@@ -386,54 +399,89 @@ export const voiceService = {
   
   // Delegate all methods to the instance
   async ensureInitialized() {
-    return this.instance.ensureInitialized();
+    try {
+      return this.instance.ensureInitialized();
+    } catch (error) {
+      console.error('Voice service ensureInitialized error:', error);
+      return Promise.resolve();
+    }
   },
   
-  async speak(text: string, voiceProfile?: keyof typeof VOICE_PROFILES, customSettings?: Partial<VoiceSettings>) {
-    return this.instance.speak(text, voiceProfile, customSettings);
+  async speak(text: string, profile: VoiceProfile) {
+    try {
+      return this.instance.speak(text, profile);
+    } catch (error) {
+      console.error('Voice service speak error:', error);
+      return Promise.resolve();
+    }
   },
   
-  async speakInterruptible(text: string, voiceProfile?: keyof typeof VOICE_PROFILES, customSettings?: Partial<VoiceSettings>) {
-    return this.instance.speakInterruptible(text, voiceProfile, customSettings);
+  async speakWithLipSync(text: string, profile: VoiceProfile, onVoiceLevel?: (level: number) => void) {
+    try {
+      return this.instance.speakWithLipSync(text, profile, onVoiceLevel);
+    } catch (error) {
+      console.error('Voice service speakWithLipSync error:', error);
+      return Promise.resolve();
+    }
   },
   
   stop() {
-    return this.instance.stop();
+    try {
+      return this.instance.stop();
+    } catch (error) {
+      console.error('Voice service stop error:', error);
+    }
   },
   
   pause() {
-    return this.instance.pause();
+    try {
+      return this.instance.pause();
+    } catch (error) {
+      console.error('Voice service pause error:', error);
+    }
   },
   
   resume() {
-    return this.instance.resume();
+    try {
+      return this.instance.resume();
+    } catch (error) {
+      console.error('Voice service resume error:', error);
+    }
   },
   
-  get isSpeaking() {
-    return this.instance.isSpeaking;
-  },
-  
-  get isSupported() {
-    return this.instance.isSupported;
-  },
-  
-  getVoices() {
-    return this.instance.getVoices();
-  },
-  
-  setGlobalVolume(volume: number) {
-    return this.instance.setGlobalVolume(volume);
-  },
-  
-  setGlobalRate(rate: number) {
-    return this.instance.setGlobalRate(rate);
-  },
-  
-  setGlobalPitch(pitch: number) {
-    return this.instance.setGlobalPitch(pitch);
+  isSpeaking() {
+    try {
+      return this.instance.isSpeaking();
+    } catch (error) {
+      console.error('Voice service isSpeaking error:', error);
+      return false;
+    }
   },
   
   isPaused() {
-    return this.instance.isPaused();
+    try {
+      return this.instance.isPaused();
+    } catch (error) {
+      console.error('Voice service isPaused error:', error);
+      return false;
+    }
+  },
+  
+  getAvailableVoices() {
+    try {
+      return this.instance.getAvailableVoices();
+    } catch (error) {
+      console.error('Voice service getAvailableVoices error:', error);
+      return [];
+    }
+  },
+  
+  findBestVoice(profile: VoiceProfile) {
+    try {
+      return this.instance.findBestVoice(profile);
+    } catch (error) {
+      console.error('Voice service findBestVoice error:', error);
+      return null;
+    }
   }
 };

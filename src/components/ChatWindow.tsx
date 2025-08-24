@@ -121,7 +121,11 @@ export function ChatWindow({
       }
       // Stop any ongoing voice synthesis
       if (isSpeaking) {
-        voiceService.stop();
+        try {
+          voiceService.stop();
+        } catch (error) {
+          console.error('Error stopping voice synthesis:', error);
+        }
         setIsSpeaking(false);
         setShowSpeakingOverlay(false);
         setSpeakingMessageId(null);
@@ -148,7 +152,11 @@ export function ChatWindow({
     // Stop voice synthesis immediately
     if (isSpeaking) {
       console.log('Stopping voice synthesis');
-      voiceService.stop();
+      try {
+        voiceService.stop();
+      } catch (error) {
+        console.error('Error stopping voice synthesis on cleanup:', error);
+      }
       setIsSpeaking(false);
       setShowSpeakingOverlay(false);
       setSpeakingMessageId(null);
@@ -741,7 +749,11 @@ export function ChatWindow({
 
   const handleStopSpeaking = () => {
     console.log('Manual voice stop triggered');
-    voiceService.stop();
+    try {
+      voiceService.stop();
+    } catch (error) {
+      console.error('Error stopping voice synthesis manually:', error);
+    }
     setIsSpeaking(false);
     setShowSpeakingOverlay(false);
     setSpeakingMessageId(null);

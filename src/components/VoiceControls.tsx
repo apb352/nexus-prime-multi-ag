@@ -38,9 +38,14 @@ export function VoiceControls({
   // Update state based on voice service status
   useEffect(() => {
     const checkSpeakingStatus = () => {
-      const isCurrentlySpeaking = voiceService.isSpeaking();
-      if (isCurrentlySpeaking !== isSpeaking) {
-        setIsSpeaking(isCurrentlySpeaking);
+      try {
+        const isCurrentlySpeaking = voiceService.isSpeaking();
+        if (isCurrentlySpeaking !== isSpeaking) {
+          setIsSpeaking(isCurrentlySpeaking);
+        }
+      } catch (error) {
+        console.error('Error checking speaking status:', error);
+        setIsSpeaking(false);
       }
     };
     
@@ -51,7 +56,11 @@ export function VoiceControls({
   }, [isSpeaking]);
 
   useEffect(() => {
-    voiceService.ensureInitialized();
+    try {
+      voiceService.ensureInitialized();
+    } catch (error) {
+      console.error('Error initializing voice service:', error);
+    }
   }, []);
 
   const handleEnabledChange = (enabled: boolean) => {
@@ -95,7 +104,11 @@ export function VoiceControls({
 
   const handleTestVoice = async () => {
     if (isSpeaking) {
-      voiceService.stop();
+      try {
+        voiceService.stop();
+      } catch (error) {
+        console.error('Error stopping voice in test:', error);
+      }
       setIsSpeaking(false);
       return;
     }
@@ -122,7 +135,11 @@ export function VoiceControls({
 
   const handleQuickStop = () => {
     if (isSpeaking) {
-      voiceService.stop();
+      try {
+        voiceService.stop();
+      } catch (error) {
+        console.error('Error during quick stop:', error);
+      }
       setIsSpeaking(false);
       if (onStopSpeaking) {
         onStopSpeaking();
