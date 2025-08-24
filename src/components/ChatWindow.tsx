@@ -871,23 +871,6 @@ export function ChatWindow({
           <VoiceControls
             voiceSettings={agent.voiceSettings}
             onVoiceSettingsChange={handleVoiceSettingsChange}
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="z-[2500]">
-              {AI_MODELS.map((model) => (
-                <SelectItem key={model.value} value={model.value}>
-                  {model.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <VoiceControls
-            voiceSettings={agent.voiceSettings}
-            onVoiceSettingsChange={handleVoiceSettingsChange}
             onSpeak={handleSpeakMessage}
             onStopSpeaking={handleStopSpeaking}
             className="mr-2"
