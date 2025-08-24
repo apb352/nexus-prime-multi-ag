@@ -311,7 +311,7 @@ export function ChatWindow({
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message || !message.trim() || isLoading) return;
 
     const userMessage = cleanUserMessage(message.trim());
     setMessage('');
@@ -344,7 +344,7 @@ export function ChatWindow({
         let imagePrompt = userMessage;
         
         // Clean up the prompt by removing generation commands
-        const cleanPrompt = imagePrompt
+        const cleanPrompt = (imagePrompt || '')
           .replace(/(?:generate|create|draw|paint|visualize|show me|make)\s+(?:an?\s+)?(?:image|picture|drawing)\s+(?:of\s+)?/gi, '')
           .replace(/(?:can you\s+)?(?:generate|create|draw|paint|make)\s+/gi, '')
           .trim();
@@ -1127,7 +1127,7 @@ export function ChatWindow({
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!message.trim() || isLoading}
+            disabled={!message || !message.trim() || isLoading}
             size="sm"
             style={{ backgroundColor: agent.color }}
           >

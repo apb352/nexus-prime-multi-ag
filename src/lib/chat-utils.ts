@@ -31,7 +31,7 @@ export async function createEnhancedChatPrompt(
   
   // Use very conservative cleaning to avoid any content filter triggers
   const cleanAgentName = (agentName || 'Assistant').slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Assistant';
-  const cleanUserMessage = userMessage.slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanUserMessage = (userMessage || '').slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim() || 'Help me please';
   
   let internetContext = '';
   let internetSummary = '';
@@ -95,7 +95,7 @@ export async function createEnhancedChatPrompt(
   
   // Create a very simple, safe prompt to avoid content filtering
   let prompt: string;
-  const hasInternetContext = Boolean(internetContext.trim());
+  const hasInternetContext = Boolean(internetContext && internetContext.trim());
   
   // Add image generation capability context if enabled
   let imageContext = '';
@@ -135,7 +135,7 @@ export function createBasicChatPrompt(
   agentPersonality?: string,
   agentMood?: string
 ): string {
-  const cleanUserMessage = userMessage.slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanUserMessage = (userMessage || '').slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim() || 'Help me please';
   
   // Extremely simple format to avoid content filters
   return `Question: ${cleanUserMessage}
@@ -148,6 +148,10 @@ Please provide a helpful answer.`;
  */
 export function cleanUserMessage(message: string): string {
   // Less aggressive cleaning to preserve legitimate words like "current", "latest", etc.
+  if (!message || typeof message !== 'string') {
+    return 'Please help me with information';
+  }
+  
   let cleaned = message.trim()
     .replace(/[^\w\s\?\.\!\,\'\"\-\:\;\(\)]/g, ' ') // Keep only safe characters
     .replace(/\s+/g, ' ') // Normalize whitespace

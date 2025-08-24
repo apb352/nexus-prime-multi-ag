@@ -78,7 +78,7 @@ export function AgentManager({ activeWindowAgents, onRemoveAgent }: AgentManager
   };
 
   const handleSave = () => {
-    if (!formData.name.trim()) return;
+    if (!formData.name || !formData.name.trim()) return;
 
     if (editingAgent) {
       // Update existing agent
@@ -345,7 +345,7 @@ export function AgentManager({ activeWindowAgents, onRemoveAgent }: AgentManager
                 </Button>
                 <Button 
                   onClick={handleSave}
-                  disabled={!formData.name.trim()}
+                  disabled={!formData.name || !formData.name.trim()}
                 >
                   {editingAgent ? 'Update Agent' : 'Create Agent'}
                 </Button>

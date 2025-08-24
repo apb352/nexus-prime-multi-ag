@@ -91,7 +91,7 @@ export function InternetControls({
   };
 
   const handleAddDomain = (type: 'allowed' | 'blocked') => {
-    if (!newDomain.trim()) return;
+    if (!newDomain || !newDomain.trim()) return;
     
     const currentDomains = type === 'allowed' ? settings.allowedDomains || [] : settings.blockedDomains || [];
     const updatedDomains = [...currentDomains, newDomain.trim()];
@@ -258,7 +258,7 @@ export function InternetControls({
                     <Button
                       size="sm"
                       onClick={() => handleAddDomain('blocked')}
-                      disabled={!newDomain.trim()}
+                      disabled={!newDomain || !newDomain.trim()}
                     >
                       Block
                     </Button>
@@ -298,7 +298,7 @@ export function InternetControls({
                     <Button
                       size="sm"
                       onClick={() => handleAddDomain('allowed')}
-                      disabled={!newDomain.trim()}
+                      disabled={!newDomain || !newDomain.trim()}
                     >
                       Allow
                     </Button>

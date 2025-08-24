@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createEnhancedChatPrompt, createBasicChatPrompt } from '@/lib/chat-utils';
+import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
 import { internetService } from '@/lib/internet-service';
 
 export function TestFixes() {
@@ -128,6 +128,58 @@ export function TestFixes() {
     }
   };
 
+  const testNullErrors = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Testing null error fixes...');
+      
+      // Test null and undefined inputs
+      const nullTests = [null, undefined, '', '   '];
+      
+      for (const testInput of nullTests) {
+        console.log(`Testing with input: ${testInput}`);
+        
+        // Test cleanUserMessage
+        try {
+          const cleaned = cleanUserMessage(testInput as string);
+          console.log(`cleanUserMessage result: "${cleaned}"`);
+        } catch (e) {
+          console.error(`cleanUserMessage failed with ${testInput}:`, e.message);
+        }
+        
+        // Test createBasicChatPrompt
+        try {
+          const prompt = createBasicChatPrompt(testInput as string);
+          console.log(`createBasicChatPrompt result: "${prompt.substring(0, 50)}..."`);
+        } catch (e) {
+          console.error(`createBasicChatPrompt failed with ${testInput}:`, e.message);
+        }
+        
+        // Test internet service functions
+        try {
+          const shouldSearch = internetService.shouldSearchInternet(testInput as string);
+          console.log(`shouldSearchInternet result: ${shouldSearch}`);
+        } catch (e) {
+          console.error(`shouldSearchInternet failed with ${testInput}:`, e.message);
+        }
+        
+        try {
+          const weatherLocation = internetService.extractWeatherLocation(testInput as string);
+          console.log(`extractWeatherLocation result: ${weatherLocation}`);
+        } catch (e) {
+          console.error(`extractWeatherLocation failed with ${testInput}:`, e.message);
+        }
+      }
+      
+      setTestResult('Null error testing completed - check console for details');
+    } catch (error) {
+      console.error('Null test failed:', error);
+      setTestResult(`Null Test Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="w-96 m-4">
       <CardHeader>
@@ -172,6 +224,14 @@ export function TestFixes() {
             size="sm"
           >
             Test President
+          </Button>
+          <Button 
+            onClick={testNullErrors}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+          >
+            Test Null Fixes
           </Button>
         </div>
         

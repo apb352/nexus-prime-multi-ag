@@ -139,7 +139,7 @@ export function GroupChatWindow({
   }, [isDragging, isResizing, dragStart]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading) return;
+    if (!message || !message.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -641,7 +641,7 @@ export function GroupChatWindow({
           ) : (
             <Button
               onClick={handleSendMessage}
-              disabled={!message.trim()}
+              disabled={!message || !message.trim()}
               size="sm"
               className="h-10"
             >

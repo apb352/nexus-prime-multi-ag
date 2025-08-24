@@ -132,12 +132,16 @@ class InternetService {
     
     console.log(`Creating intelligent mock search results for: "${query}"`);
     
+    if (!query || typeof query !== 'string') {
+      return [];
+    }
+    
     const lowerQuery = query.toLowerCase();
     let mockResults: SearchResult[] = [];
     
     // Generate contextually relevant mock results based on query content
     if (lowerQuery.includes('weather') || lowerQuery.includes('temperature') || lowerQuery.includes('forecast')) {
-      const location = query.replace(/weather|in|for|temperature|forecast/gi, '').trim();
+      const location = query.replace(/weather|in|for|temperature|forecast/gi, '').trim() || 'Unknown Location';
       mockResults = [
         {
           title: `Weather forecast for ${location}`,
@@ -168,7 +172,7 @@ class InternetService {
         }
       ];
     } else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('current') || lowerQuery.includes('today')) {
-      const topic = query.replace(/news|latest|current|today|about/gi, '').trim();
+      const topic = query.replace(/news|latest|current|today|about/gi, '').trim() || 'general topics';
       mockResults = [
         {
           title: `Latest news about ${topic}`,
@@ -184,7 +188,7 @@ class InternetService {
         }
       ];
     } else if (lowerQuery.includes('how to') || lowerQuery.includes('tutorial') || lowerQuery.includes('guide')) {
-      const topic = query.replace(/how to|tutorial|guide/gi, '').trim();
+      const topic = query.replace(/how to|tutorial|guide/gi, '').trim() || 'learning topics';
       mockResults = [
         {
           title: `How to ${topic} - Complete Guide`,
@@ -200,7 +204,7 @@ class InternetService {
         }
       ];
     } else if (lowerQuery.includes('what is') || lowerQuery.includes('definition') || lowerQuery.includes('meaning')) {
-      const term = query.replace(/what is|definition|meaning/gi, '').trim();
+      const term = query.replace(/what is|definition|meaning/gi, '').trim() || 'general concepts';
       mockResults = [
         {
           title: `${term} - Definition and Explanation`,
@@ -216,7 +220,7 @@ class InternetService {
         }
       ];
     } else if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('buy')) {
-      const product = query.replace(/price|cost|buy|of/gi, '').trim();
+      const product = query.replace(/price|cost|buy|of/gi, '').trim() || 'products';
       mockResults = [
         {
           title: `${product} - Prices and Reviews`,
@@ -285,7 +289,11 @@ class InternetService {
     
     console.log(`Using intelligent mock weather service for: ${location}`);
     
-    // Clean up location string
+    // Clean up location string - add null check
+    if (!location || typeof location !== 'string') {
+      location = 'Unknown Location';
+    }
+    
     const cleanLocation = location.trim()
       .replace(/\s+/g, ' ')
       .replace(/,\s+/g, ',')
@@ -402,6 +410,10 @@ class InternetService {
       return false;
     }
 
+    if (!message || typeof message !== 'string') {
+      return false;
+    }
+
     const searchIndicators = [
       'what is', 'who is', 'when did', 'where is', 'how to',
       'latest', 'recent', 'current', 'today', 'news about',
@@ -437,35 +449,39 @@ class InternetService {
    * Enhanced weather pattern matching
    */
   extractWeatherLocation(message: string): string | null {
+    if (!message || typeof message !== 'string') {
+      return null;
+    }
+    
     const lowerMessage = message.toLowerCase();
     
     // Pattern 1: "weather in/for [location]"
     let match = lowerMessage.match(/weather (?:in|for) ([a-z0-9\s,.-]+?)(?:\?|$|\.|!|,)/i);
-    if (match) {
+    if (match && match[1]) {
       return match[1].trim();
     }
     
     // Pattern 2: "what's the weather in/for [location]"
     match = lowerMessage.match(/what'?s the weather (?:in|for) ([a-z0-9\s,.-]+?)(?:\?|$|\.|!|,)/i);
-    if (match) {
+    if (match && match[1]) {
       return match[1].trim();
     }
     
     // Pattern 3: "how's the weather in [location]"
     match = lowerMessage.match(/how'?s the weather (?:in|for) ([a-z0-9\s,.-]+?)(?:\?|$|\.|!|,)/i);
-    if (match) {
+    if (match && match[1]) {
       return match[1].trim();
     }
     
     // Pattern 4: "temperature in [location]"
     match = lowerMessage.match(/temperature (?:in|for) ([a-z0-9\s,.-]+?)(?:\?|$|\.|!|,)/i);
-    if (match) {
+    if (match && match[1]) {
       return match[1].trim();
     }
     
     // Pattern 5: "weather [location]" (without in/for)
     match = lowerMessage.match(/weather ([a-z0-9\s,.-]+?)(?:\?|$|\.|!)/i);
-    if (match && match[1].trim().length > 2) {
+    if (match && match[1] && match[1].trim().length > 2) {
       return match[1].trim();
     }
     

@@ -27,7 +27,7 @@ export function GroupChatCreator({ agents, onCreateGroupChat }: GroupChatCreator
   };
 
   const handleCreate = () => {
-    if (selectedAgents.length >= 2 && topic.trim()) {
+    if (selectedAgents.length >= 2 && topic && topic.trim()) {
       onCreateGroupChat(selectedAgents, topic.trim());
       setIsOpen(false);
       setSelectedAgents([]);
@@ -99,7 +99,7 @@ export function GroupChatCreator({ agents, onCreateGroupChat }: GroupChatCreator
 
           <Button 
             onClick={handleCreate}
-            disabled={selectedAgents.length < 2 || !topic.trim()}
+            disabled={selectedAgents.length < 2 || !topic || !topic.trim()}
             className="w-full"
           >
             Create Group Chat
