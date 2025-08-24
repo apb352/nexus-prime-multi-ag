@@ -249,6 +249,13 @@ export function ChatWindow({
 
     setIsGeneratingImage(true);
     
+    // Add loading message
+    addMessage(agent.id, {
+      content: `I'm creating an image for you with the prompt: "${prompt}". This may take a moment...`,
+      sender: 'ai',
+      agentId: agent.id
+    });
+    
     try {
       const imageService = ImageService.getInstance();
       const imageUrl = await imageService.generateImage(prompt, agent.imageSettings);
@@ -266,7 +273,7 @@ export function ChatWindow({
         
         // Add image message to chat
         addMessage(agent.id, {
-          content: `I've generated an image for you: "${prompt}"`,
+          content: `I've created an image for you based on: "${prompt}". The image reflects the ${settings.imageStyle} style you selected and captures the essence of your request.`,
           sender: 'ai',
           agentId: agent.id,
           imageUrl,
@@ -276,7 +283,7 @@ export function ChatWindow({
     } catch (error) {
       console.error('Error generating image:', error);
       addMessage(agent.id, {
-        content: `I encountered an error while generating the image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `I'm sorry, I encountered an issue while creating your image. The image generation feature is currently using a placeholder system while we work on integrating full AI image generation capabilities. You can still use the canvas drawing feature by clicking the image icon and enabling canvas mode!`,
         sender: 'ai',
         agentId: agent.id
       });
@@ -332,7 +339,10 @@ export function ChatWindow({
       const imageGenerationKeywords = [
         'generate image', 'create image', 'draw', 'paint', 'visualize', 
         'show me', 'create a picture', 'make an image', 'generate a picture',
-        'can you draw', 'can you create', 'can you make'
+        'can you draw', 'can you create', 'can you make', 'draw me',
+        'paint me', 'create art', 'make art', 'generate art', 'design',
+        'illustrate', 'sketch', 'render', 'produce image', 'create visual',
+        'make visual', 'generate visual', 'picture of', 'image of'
       ];
       
       const isImageRequest = imageGenerationKeywords.some(keyword => 
@@ -345,8 +355,9 @@ export function ChatWindow({
         
         // Clean up the prompt by removing generation commands
         const cleanPrompt = (imagePrompt || '')
-          .replace(/(?:generate|create|draw|paint|visualize|show me|make)\s+(?:an?\s+)?(?:image|picture|drawing)\s+(?:of\s+)?/gi, '')
-          .replace(/(?:can you\s+)?(?:generate|create|draw|paint|make)\s+/gi, '')
+          .replace(/(?:generate|create|draw|paint|visualize|show me|make|design|illustrate|sketch|render|produce)\s+(?:an?\s+)?(?:image|picture|drawing|art|visual|illustration|sketch)\s+(?:of\s+)?/gi, '')
+          .replace(/(?:can you\s+)?(?:please\s+)?(?:generate|create|draw|paint|make|design|illustrate|sketch|render)\s+/gi, '')
+          .replace(/(?:picture|image|drawing|art|visual|illustration|sketch)\s+of\s+/gi, '')
           .trim();
         
         if (cleanPrompt) {
