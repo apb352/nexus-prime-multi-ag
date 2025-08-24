@@ -408,80 +408,78 @@ export const voiceService = {
   },
   
   async speak(text: string, profile: VoiceProfile) {
-    try {
       return this.instance.speak(text, profile);
     } catch (error) {
       console.error('Voice service speak error:', error);
       return Promise.resolve();
     }
   },
-  
+  },
+  ng, profile: VoiceProfile, onVoiceLevel?: (level: number) => void) {
   async speakWithLipSync(text: string, profile: VoiceProfile, onVoiceLevel?: (level: number) => void) {
-    try {
       return this.instance.speakWithLipSync(text, profile, onVoiceLevel);
     } catch (error) {
       console.error('Voice service speakWithLipSync error:', error);
       return Promise.resolve();
     }
   },
-  
   stop() {
     try {
-      return this.instance.stop();
+  stop() {
     } catch (error) {
       console.error('Voice service stop error:', error);
     }
   },
   
-  pause() {
     try {
       return this.instance.pause();
-    } catch (error) {
+  pause() {
       console.error('Voice service pause error:', error);
     }
   },
   
   resume() {
+  },
+  
+  resume() {
     try {
       return this.instance.resume();
-    } catch (error) {
-      console.error('Voice service resume error:', error);
-    }
+  },
+  
+  isSpeaking() {
   },
   
   isSpeaking() {
     try {
       return this.instance.isSpeaking();
-    } catch (error) {
-      console.error('Voice service isSpeaking error:', error);
-      return false;
     }
+  },
+  
+  isPaused() {
   },
   
   isPaused() {
     try {
       return this.instance.isPaused();
-    } catch (error) {
-      console.error('Voice service isPaused error:', error);
-      return false;
     }
+  },
+  
+  getAvailableVoices() {
   },
   
   getAvailableVoices() {
     try {
       return this.instance.getAvailableVoices();
-    } catch (error) {
-      console.error('Voice service getAvailableVoices error:', error);
-      return [];
     }
+  },
+  
+  findBestVoice(profile: VoiceProfile) {
   },
   
   findBestVoice(profile: VoiceProfile) {
     try {
       return this.instance.findBestVoice(profile);
-    } catch (error) {
-      console.error('Voice service findBestVoice error:', error);
-      return null;
     }
   }
+};  }
 };
