@@ -53,16 +53,24 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     rate: 0.7,
     volume: 0.9,
     lang: 'en-US',
+    voiceName: 'Microsoft Richard - English (United States)'
+  },
+  strategist: {
+    name: 'Strategist',
+    pitch: 0.9,
+    rate: 1.0,
+    volume: 0.8,
+    lang: 'en-US',
     voiceName: 'Microsoft George - English (United States)'
   },
-  companion: {
-    name: 'Companion',
+  innovator: {
+    name: 'Innovator',
     pitch: 1.2,
-    rate: 1.0,
+    rate: 1.3,
     volume: 0.9,
     lang: 'en-US',
-    voiceName: 'Microsoft Eva - English (United States)'
-  }
+    voiceName: 'Microsoft Susan - English (United States)'
+  },
 };
 
 export class VoiceService {
@@ -120,240 +128,163 @@ export class VoiceService {
   }
 
   public findBestVoice(profile: VoiceProfile): SpeechSynthesisVoice | null {
-    // First try to find the preferred voice by name
+    if (!this.voices.length) return null;
+
+    // First, try to find by exact voice name
     if (profile.voiceName) {
-      const preferredVoice = this.voices.find(voice => 
-        voice.name.includes(profile.voiceName!) || 
-        voice.name === profile.voiceName
-      );
-      if (preferredVoice) return preferredVoice;
+      const exactMatch = this.voices.find(voice => voice.name === profile.voiceName);
+      if (exactMatch) return exactMatch;
     }
 
-    // Fallback to finding by language and gender patterns
-    const langVoices = this.voices.filter(voice => voice.lang.startsWith(profile.lang));
-    
-    if (langVoices.length === 0) {
-      return this.voices[0] || null;
+    // Then try to find by language
+    const langMatches = this.voices.filter(voice => voice.lang.startsWith(profile.lang.split('-')[0]));
+    if (langMatches.length > 0) {
+      // Prefer the first match for the specific language
+      const exactLangMatch = langMatches.find(voice => voice.lang === profile.lang);
+      return exactLangMatch || langMatches[0];
     }
 
-    // Try to match voice characteristics based on pitch
-    if (profile.pitch > 1.0) {
-      // Higher pitch - prefer female voices
-      const femaleVoice = langVoices.find(voice => 
-        voice.name.toLowerCase().includes('female') ||
-        voice.name.toLowerCase().includes('zira') ||
-        voice.name.toLowerCase().includes('eva') ||
-        voice.name.toLowerCase().includes('hazel')
-      );
-      if (femaleVoice) return femaleVoice;
-    } else {
-      // Lower pitch - prefer male voices
-      const maleVoice = langVoices.find(voice => 
-        voice.name.toLowerCase().includes('male') ||
-        voice.name.toLowerCase().includes('david') ||
-        voice.name.toLowerCase().includes('mark') ||
-        voice.name.toLowerCase().includes('george')
-      );
-      if (maleVoice) return maleVoice;
-    }
-
-    return langVoices[0];
+    // Fallback to first available voice
+    return this.voices[0];
   }
 
-  public speak(text: string, profile: VoiceProfile): Promise<void> {
+  public async speak(text: string, profile: VoiceProfile): Promise<void> {
+    if (!this.synthesis) {
+      console.warn('Speech synthesis not available');
+      return Promise.resolve();
+    }
+
+    await this.ensureInitialized();
+
     return new Promise((resolve, reject) => {
-      if (!this.synthesis || !text.trim()) {
-        resolve();
-        return;
-      }
+      try {
+        this.stop(); // Stop any current speech
 
-      // Cancel any ongoing speech
-      this.stop();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voice = this.findBestVoice(profile);
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      this.currentUtterance = utterance;
-      
-      // Apply voice profile settings
-      utterance.pitch = Math.max(0.1, Math.min(2, profile.pitch));
-      utterance.rate = Math.max(0.1, Math.min(10, profile.rate));
-      utterance.volume = Math.max(0, Math.min(1, profile.volume));
-      utterance.lang = profile.lang;
+        if (voice) {
+          utterance.voice = voice;
+        }
 
-      // Set the best matching voice
-      const voice = this.findBestVoice(profile);
-      if (voice) {
-        utterance.voice = voice;
-      }
+        utterance.pitch = profile.pitch;
+        utterance.rate = profile.rate;
+        utterance.volume = profile.volume;
+        utterance.lang = profile.lang;
 
-      utterance.onstart = () => {
-        this._isSpeaking = true;
-        console.log('Voice synthesis started');
-      };
+        utterance.onstart = () => {
+          this._isSpeaking = true;
+        };
 
-      utterance.onend = () => {
+        utterance.onend = () => {
+          this._isSpeaking = false;
+          this.currentUtterance = null;
+          resolve();
+        };
+
+        utterance.onerror = (event) => {
+          this._isSpeaking = false;
+          this.currentUtterance = null;
+          console.error('Speech synthesis error:', event.error);
+          resolve(); // Resolve instead of reject to prevent breaking the chain
+        };
+
+        this.currentUtterance = utterance;
+        this.synthesis.speak(utterance);
+      } catch (error) {
         this._isSpeaking = false;
         this.currentUtterance = null;
-        console.log('Voice synthesis ended');
-        resolve();
-      };
-      
-      utterance.onerror = (event) => {
-        this._isSpeaking = false;
-        this.currentUtterance = null;
-        console.error('Voice synthesis error:', event.error);
-        reject(new Error(`Speech synthesis error: ${event.error}`));
-      };
-
-      this.synthesis.speak(utterance);
+        console.error('Speech synthesis error:', error);
+        resolve(); // Resolve instead of reject
+      }
     });
   }
 
-  public speakWithLipSync(
+  public async speakWithLipSync(
     text: string, 
-    profile: VoiceProfile, 
+    profile: VoiceProfile,
     onVoiceLevel?: (level: number) => void
   ): Promise<void> {
+    if (!this.synthesis) {
+      console.warn('Speech synthesis not available');
+      return Promise.resolve();
+    }
+
+    await this.ensureInitialized();
+
     return new Promise((resolve, reject) => {
-      if (!this.synthesis || !text.trim()) {
-        resolve();
-        return;
-      }
-
-      // Cancel any ongoing speech
-      this.stop();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      this.currentUtterance = utterance;
-      
-      // Apply voice profile settings
-      utterance.pitch = Math.max(0.1, Math.min(2, profile.pitch));
-      utterance.rate = Math.max(0.1, Math.min(10, profile.rate));
-      utterance.volume = Math.max(0, Math.min(1, profile.volume));
-      utterance.lang = profile.lang;
-
-      // Set the best matching voice
-      const voice = this.findBestVoice(profile);
-      if (voice) {
-        utterance.voice = voice;
-      }
-
-      // Set up audio analysis for lip sync if available
-      let animationId: number | null = null;
-      
       try {
-        // Note: Speech synthesis output capture is limited in browsers
-        // We'll simulate voice levels based on speech timing instead
-        const simulateVoiceLevel = () => {
-          if (!onVoiceLevel) return;
+        this.stop(); // Stop any current speech
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voice = this.findBestVoice(profile);
+
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        utterance.pitch = profile.pitch;
+        utterance.rate = profile.rate;
+        utterance.volume = profile.volume;
+        utterance.lang = profile.lang;
+
+        let intervalId: number | null = null;
+
+        utterance.onstart = () => {
+          this._isSpeaking = true;
           
-          // Simulate realistic voice activity based on text characteristics
-          const words = text.split(/\s+/);
-          const speechDuration = (words.length / (profile.rate * 2.5)) * 1000; // Approximate duration
-          const startTime = Date.now();
-          
-          const updateLevel = () => {
-            if (!this._isSpeaking) {
-              if (onVoiceLevel) onVoiceLevel(0);
-              return;
-            }
-            
-            const elapsed = Date.now() - startTime;
-            const progress = elapsed / speechDuration;
-            
-            if (progress >= 1) {
-              if (onVoiceLevel) onVoiceLevel(0);
-              return;
-            }
-            
-            // Create realistic voice patterns
-            const baseLevel = 0.3 + Math.random() * 0.4;
-            const speechPattern = Math.sin(elapsed * 0.01) * 0.3 + 0.3;
-            const microVariation = Math.sin(elapsed * 0.02) * 0.2;
-            const wordBreaks = Math.sin(elapsed * 0.005) > 0.8 ? 0.1 : 1;
-            
-            const level = Math.max(0, Math.min(1, 
-              (baseLevel + speechPattern + microVariation) * wordBreaks
-            ));
-            
-            if (onVoiceLevel) onVoiceLevel(level);
-            animationId = requestAnimationFrame(updateLevel);
-          };
-          
-          updateLevel();
+          // Simulate voice level changes for lip sync
+          if (onVoiceLevel) {
+            intervalId = window.setInterval(() => {
+              if (this._isSpeaking) {
+                // Generate a random voice level between 0.3 and 1.0
+                const level = 0.3 + Math.random() * 0.7;
+                onVoiceLevel(level);
+              }
+            }, 100);
+          }
         };
-        
-        simulateVoiceLevel();
-        
+
+        utterance.onend = () => {
+          this._isSpeaking = false;
+          this.currentUtterance = null;
+          if (intervalId) {
+            clearInterval(intervalId);
+          }
+          if (onVoiceLevel) {
+            onVoiceLevel(0);
+          }
+          resolve();
+        };
+
+        utterance.onerror = (event) => {
+          this._isSpeaking = false;
+          this.currentUtterance = null;
+          if (intervalId) {
+            clearInterval(intervalId);
+          }
+          if (onVoiceLevel) {
+            onVoiceLevel(0);
+          }
+          console.error('Speech synthesis error:', event.error);
+          resolve(); // Resolve instead of reject
+        };
+
+        this.currentUtterance = utterance;
+        this.synthesis.speak(utterance);
       } catch (error) {
-        console.warn('Could not set up audio analysis for lip sync:', error);
-        
-        // Fallback: Simple simulation without Web Audio API
+        this._isSpeaking = false;
+        this.currentUtterance = null;
         if (onVoiceLevel) {
-          const words = text.split(/\s+/);
-          const speechDuration = (words.length / (profile.rate * 2.5)) * 1000;
-          const startTime = Date.now();
-          
-          const simpleUpdate = () => {
-            if (!this._isSpeaking) {
-              if (onVoiceLevel) onVoiceLevel(0);
-              return;
-            }
-            
-            const elapsed = Date.now() - startTime;
-            const progress = elapsed / speechDuration;
-            
-            if (progress >= 1) {
-              if (onVoiceLevel) onVoiceLevel(0);
-              return;
-            }
-            
-            // Simple sine wave pattern
-            const level = Math.sin(elapsed * 0.008) * 0.5 + 0.5;
-            if (onVoiceLevel) onVoiceLevel(level * 0.7); // Moderate intensity
-            animationId = requestAnimationFrame(simpleUpdate);
-          };
-          
-          simpleUpdate();
+          onVoiceLevel(0);
         }
+        console.error('Speech synthesis error:', error);
+        resolve(); // Resolve instead of reject
       }
-
-      utterance.onstart = () => {
-        this._isSpeaking = true;
-        console.log('Voice synthesis with lip sync started');
-      };
-
-      utterance.onend = () => {
-        this._isSpeaking = false;
-        this.currentUtterance = null;
-        if (animationId) {
-          cancelAnimationFrame(animationId);
-        }
-        if (onVoiceLevel) {
-          onVoiceLevel(0); // Reset voice level
-        }
-        console.log('Voice synthesis with lip sync ended');
-        resolve();
-      };
-      
-      utterance.onerror = (event) => {
-        this._isSpeaking = false;
-        this.currentUtterance = null;
-        if (animationId) {
-          cancelAnimationFrame(animationId);
-        }
-        if (onVoiceLevel) {
-          onVoiceLevel(0); // Reset voice level
-        }
-        console.error('Voice synthesis error:', event.error);
-        reject(new Error(`Speech synthesis error: ${event.error}`));
-      };
-
-      this.synthesis.speak(utterance);
     });
   }
 
   public stop(): void {
-    console.log('Voice service stop called');
     if (this.synthesis) {
       this.synthesis.cancel();
     }
@@ -408,78 +339,80 @@ export const voiceService = {
   },
   
   async speak(text: string, profile: VoiceProfile) {
+    try {
       return this.instance.speak(text, profile);
     } catch (error) {
       console.error('Voice service speak error:', error);
       return Promise.resolve();
     }
   },
-  },
-  ng, profile: VoiceProfile, onVoiceLevel?: (level: number) => void) {
+  
   async speakWithLipSync(text: string, profile: VoiceProfile, onVoiceLevel?: (level: number) => void) {
+    try {
       return this.instance.speakWithLipSync(text, profile, onVoiceLevel);
     } catch (error) {
       console.error('Voice service speakWithLipSync error:', error);
       return Promise.resolve();
     }
   },
+  
   stop() {
     try {
-  stop() {
+      return this.instance.stop();
     } catch (error) {
       console.error('Voice service stop error:', error);
     }
   },
   
+  pause() {
     try {
       return this.instance.pause();
-  pause() {
+    } catch (error) {
       console.error('Voice service pause error:', error);
     }
   },
   
   resume() {
-  },
-  
-  resume() {
     try {
       return this.instance.resume();
-  },
-  
-  isSpeaking() {
+    } catch (error) {
+      console.error('Voice service resume error:', error);
+    }
   },
   
   isSpeaking() {
     try {
       return this.instance.isSpeaking();
+    } catch (error) {
+      console.error('Voice service isSpeaking error:', error);
+      return false;
     }
-  },
-  
-  isPaused() {
   },
   
   isPaused() {
     try {
       return this.instance.isPaused();
+    } catch (error) {
+      console.error('Voice service isPaused error:', error);
+      return false;
     }
-  },
-  
-  getAvailableVoices() {
   },
   
   getAvailableVoices() {
     try {
       return this.instance.getAvailableVoices();
+    } catch (error) {
+      console.error('Voice service getAvailableVoices error:', error);
+      return [];
     }
-  },
-  
-  findBestVoice(profile: VoiceProfile) {
   },
   
   findBestVoice(profile: VoiceProfile) {
     try {
       return this.instance.findBestVoice(profile);
+    } catch (error) {
+      console.error('Voice service findBestVoice error:', error);
+      return null;
     }
   }
-};  }
 };
