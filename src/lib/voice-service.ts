@@ -69,6 +69,8 @@ export class VoiceService {
   private synthesis: SpeechSynthesis;
   private voices: SpeechSynthesisVoice[] = [];
   private isInitialized = false;
+  private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private _isSpeaking = false;
 
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -150,9 +152,10 @@ export class VoiceService {
       }
 
       // Cancel any ongoing speech
-      this.synthesis.cancel();
+      this.stop();
 
       const utterance = new SpeechSynthesisUtterance(text);
+      this.currentUtterance = utterance;
       
       // Apply voice profile settings
       utterance.pitch = Math.max(0.1, Math.min(2, profile.pitch));
@@ -166,8 +169,24 @@ export class VoiceService {
         utterance.voice = voice;
       }
 
-      utterance.onend = () => resolve();
-      utterance.onerror = (event) => reject(new Error(`Speech synthesis error: ${event.error}`));
+      utterance.onstart = () => {
+        this._isSpeaking = true;
+        console.log('Voice synthesis started');
+      };
+
+      utterance.onend = () => {
+        this._isSpeaking = false;
+        this.currentUtterance = null;
+        console.log('Voice synthesis ended');
+        resolve();
+      };
+      
+      utterance.onerror = (event) => {
+        this._isSpeaking = false;
+        this.currentUtterance = null;
+        console.error('Voice synthesis error:', event.error);
+        reject(new Error(`Speech synthesis error: ${event.error}`));
+      };
 
       this.synthesis.speak(utterance);
     });
@@ -185,9 +204,10 @@ export class VoiceService {
       }
 
       // Cancel any ongoing speech
-      this.synthesis.cancel();
+      this.stop();
 
       const utterance = new SpeechSynthesisUtterance(text);
+      this.currentUtterance = utterance;
       
       // Apply voice profile settings
       utterance.pitch = Math.max(0.1, Math.min(2, profile.pitch));
@@ -202,21 +222,9 @@ export class VoiceService {
       }
 
       // Set up audio analysis for lip sync if available
-      let analyser: AnalyserNode | null = null;
-      let dataArray: Uint8Array | null = null;
       let animationId: number | null = null;
       
       try {
-        // Try to set up Web Audio API for voice level detection
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        // Create a MediaStreamDestination to capture speech synthesis output
-        const destination = audioContext.createMediaStreamDestination();
-        
         // Note: Speech synthesis output capture is limited in browsers
         // We'll simulate voice levels based on speech timing instead
         const simulateVoiceLevel = () => {
@@ -228,11 +236,16 @@ export class VoiceService {
           const startTime = Date.now();
           
           const updateLevel = () => {
+            if (!this._isSpeaking) {
+              if (onVoiceLevel) onVoiceLevel(0);
+              return;
+            }
+            
             const elapsed = Date.now() - startTime;
             const progress = elapsed / speechDuration;
             
             if (progress >= 1) {
-              onVoiceLevel(0);
+              if (onVoiceLevel) onVoiceLevel(0);
               return;
             }
             
@@ -246,7 +259,7 @@ export class VoiceService {
               (baseLevel + speechPattern + microVariation) * wordBreaks
             ));
             
-            onVoiceLevel(level);
+            if (onVoiceLevel) onVoiceLevel(level);
             animationId = requestAnimationFrame(updateLevel);
           };
           
@@ -265,17 +278,22 @@ export class VoiceService {
           const startTime = Date.now();
           
           const simpleUpdate = () => {
+            if (!this._isSpeaking) {
+              if (onVoiceLevel) onVoiceLevel(0);
+              return;
+            }
+            
             const elapsed = Date.now() - startTime;
             const progress = elapsed / speechDuration;
             
             if (progress >= 1) {
-              onVoiceLevel(0);
+              if (onVoiceLevel) onVoiceLevel(0);
               return;
             }
             
             // Simple sine wave pattern
             const level = Math.sin(elapsed * 0.008) * 0.5 + 0.5;
-            onVoiceLevel(level * 0.7); // Moderate intensity
+            if (onVoiceLevel) onVoiceLevel(level * 0.7); // Moderate intensity
             animationId = requestAnimationFrame(simpleUpdate);
           };
           
@@ -283,23 +301,34 @@ export class VoiceService {
         }
       }
 
+      utterance.onstart = () => {
+        this._isSpeaking = true;
+        console.log('Voice synthesis with lip sync started');
+      };
+
       utterance.onend = () => {
+        this._isSpeaking = false;
+        this.currentUtterance = null;
         if (animationId) {
           cancelAnimationFrame(animationId);
         }
         if (onVoiceLevel) {
           onVoiceLevel(0); // Reset voice level
         }
+        console.log('Voice synthesis with lip sync ended');
         resolve();
       };
       
       utterance.onerror = (event) => {
+        this._isSpeaking = false;
+        this.currentUtterance = null;
         if (animationId) {
           cancelAnimationFrame(animationId);
         }
         if (onVoiceLevel) {
           onVoiceLevel(0); // Reset voice level
         }
+        console.error('Voice synthesis error:', event.error);
         reject(new Error(`Speech synthesis error: ${event.error}`));
       };
 
@@ -308,7 +337,10 @@ export class VoiceService {
   }
 
   public stop(): void {
+    console.log('Voice service stop called');
     this.synthesis.cancel();
+    this._isSpeaking = false;
+    this.currentUtterance = null;
   }
 
   public pause(): void {
@@ -320,7 +352,7 @@ export class VoiceService {
   }
 
   public isSpeaking(): boolean {
-    return this.synthesis.speaking;
+    return this._isSpeaking || this.synthesis.speaking;
   }
 
   public isPaused(): boolean {

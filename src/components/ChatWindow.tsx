@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Minus, Send, Settings, SpeakerHigh, Image as ImageIcon } from '@phosphor-icons/react';
+import { X, Minus, Send, Settings, SpeakerHigh, Image as ImageIcon, Stop } from '@phosphor-icons/react';
 import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
@@ -86,6 +86,20 @@ export function ChatWindow({
   const { updateAgent } = useAgents();
   const messages = getAgentHistory(agent.id);
 
+  // Add keyboard shortcut for stopping voice
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape key stops voice synthesis
+      if (e.key === 'Escape' && isSpeaking) {
+        e.preventDefault();
+        handleStopSpeaking();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSpeaking]);
+
   useEffect(() => {
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
@@ -124,12 +138,14 @@ export function ChatWindow({
       abortControllerRef.current = null;
     }
     
-    // Stop voice synthesis
+    // Stop voice synthesis immediately
     if (isSpeaking) {
+      console.log('Stopping voice synthesis');
       voiceService.stop();
       setIsSpeaking(false);
       setShowSpeakingOverlay(false);
       setSpeakingMessageId(null);
+      setVoiceLevel(0);
     }
     
     // Stop image generation
@@ -702,13 +718,24 @@ export function ChatWindow({
         );
         
         setIsSpeaking(false);
+        setSpeakingMessageId(null);
         setTimeout(() => setShowSpeakingOverlay(false), 500);
       }
     } catch (error) {
       console.error('Voice synthesis failed:', error);
       setIsSpeaking(false);
+      setSpeakingMessageId(null);
       setShowSpeakingOverlay(false);
     }
+  };
+
+  const handleStopSpeaking = () => {
+    console.log('Manual voice stop triggered');
+    voiceService.stop();
+    setIsSpeaking(false);
+    setShowSpeakingOverlay(false);
+    setSpeakingMessageId(null);
+    setVoiceLevel(0);
   };
 
   const handleInternetToggle = (enabled: boolean) => {
@@ -815,18 +842,36 @@ export function ChatWindow({
           <div className="flex flex-col">
             <h3 className="font-semibold text-foreground">{agent.name}</h3>
             <p className="text-xs text-muted-foreground">{agent.mood}</p>
-            {/* Global voice indicator in header */}
+            {/* Global voice indicator in header with stop hint */}
             {agent.voiceSettings?.enabled && isSpeaking && (
-              <VoiceVisualization
-                isActive={true}
-                variant="embedded"
-                className="mt-1"
-              />
+              <div className="flex items-center gap-2 mt-1">
+                <VoiceVisualization
+                  isActive={true}
+                  variant="embedded"
+                  className=""
+                />
+                <span className="text-xs text-muted-foreground">Press ESC to stop</span>
+              </div>
             )}
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Emergency voice stop when speaking */}
+          {agent.voiceSettings?.enabled && isSpeaking && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleStopSpeaking}
+              className="animate-pulse"
+              title="Stop Speaking"
+            >
+              <Stop size={16} className="mr-1" />
+              Stop Voice
+            </Button>
+          )}
+          
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
           <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue />
@@ -844,6 +889,7 @@ export function ChatWindow({
             voiceSettings={agent.voiceSettings}
             onVoiceSettingsChange={handleVoiceSettingsChange}
             onSpeak={handleSpeakMessage}
+            onStopSpeaking={handleStopSpeaking}
             className="mr-2"
           />
           
@@ -1100,7 +1146,7 @@ export function ChatWindow({
       <SpeakingOverlay
         agent={agent}
         isVisible={showSpeakingOverlay}
-        onClose={() => setShowSpeakingOverlay(false)}
+        onClose={handleStopSpeaking}
         voiceLevel={voiceLevel}
       />
     </Card>

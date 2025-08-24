@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Card } from '@/components/ui/card';
-import { X } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
+import { X, Stop } from '@phosphor-icons/react';
 import { AIAgent } from '@/lib/types';
 
 interface SpeakingOverlayProps {
@@ -539,12 +540,13 @@ export function SpeakingOverlay({ agent, isVisible, onClose, voiceLevel = 0.5 }:
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[3000] flex items-center justify-center">
       <Card className="relative bg-card/95 backdrop-blur-sm border-primary/20 p-6 max-w-md w-full mx-4">
-        {/* Close button */}
+        {/* Close/Stop button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-background/50 hover:bg-background/80 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full bg-destructive/20 hover:bg-destructive/40 transition-colors group"
+          title="Stop Speaking"
         >
-          <X size={20} className="text-foreground" />
+          <Stop size={20} className="text-destructive group-hover:text-destructive-foreground" />
         </button>
         
         {/* Agent info */}
@@ -580,7 +582,7 @@ export function SpeakingOverlay({ agent, isVisible, onClose, voiceLevel = 0.5 }:
         </div>
         
         {/* Speaking indicator */}
-        <div className="flex items-center justify-center mt-4 space-x-2">
+        <div className="flex items-center justify-center mt-4 space-x-4">
           <div className="flex space-x-1">
             {[0, 1, 2].map((i) => (
               <div
@@ -593,9 +595,20 @@ export function SpeakingOverlay({ agent, isVisible, onClose, voiceLevel = 0.5 }:
               />
             ))}
           </div>
-          <span className="text-sm text-muted-foreground ml-2">
+          <span className="text-sm text-muted-foreground">
             {agent.name} is speaking
           </span>
+          
+          {/* Stop speaking button */}
+          <Button
+            onClick={onClose}
+            variant="destructive"
+            size="sm"
+            className="ml-4"
+          >
+            <Stop size={16} className="mr-1" />
+            Stop
+          </Button>
         </div>
       </Card>
     </div>

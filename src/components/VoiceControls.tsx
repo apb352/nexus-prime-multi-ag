@@ -13,6 +13,7 @@ interface VoiceControlsProps {
   voiceSettings?: VoiceSettings;
   onVoiceSettingsChange: (settings: VoiceSettings) => void;
   onSpeak?: (text: string) => void;
+  onStopSpeaking?: () => void;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export function VoiceControls({
   voiceSettings, 
   onVoiceSettingsChange, 
   onSpeak,
+  onStopSpeaking,
   className = '' 
 }: VoiceControlsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +34,21 @@ export function VoiceControls({
     autoSpeak: false,
     profile: VOICE_PROFILES.analytical
   };
+
+  // Update state based on voice service status
+  useEffect(() => {
+    const checkSpeakingStatus = () => {
+      const isCurrentlySpeaking = voiceService.isSpeaking();
+      if (isCurrentlySpeaking !== isSpeaking) {
+        setIsSpeaking(isCurrentlySpeaking);
+      }
+    };
+    
+    // Check every 100ms
+    const interval = setInterval(checkSpeakingStatus, 100);
+    
+    return () => clearInterval(interval);
+  }, [isSpeaking]);
 
   useEffect(() => {
     voiceService.ensureInitialized();
@@ -103,6 +120,16 @@ export function VoiceControls({
     }
   };
 
+  const handleQuickStop = () => {
+    if (isSpeaking) {
+      voiceService.stop();
+      setIsSpeaking(false);
+      if (onStopSpeaking) {
+        onStopSpeaking();
+      }
+    }
+  };
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Voice enabled toggle */}
@@ -117,15 +144,30 @@ export function VoiceControls({
 
       {/* Quick speak button */}
       {currentVoiceSettings.enabled && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSpeak}
-          disabled={isSpeaking}
-          className="p-2"
-        >
-          {isSpeaking ? <Stop size={16} /> : <Play size={16} />}
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSpeak}
+            disabled={isSpeaking}
+            className="p-2"
+          >
+            {isSpeaking ? <Stop size={16} /> : <Play size={16} />}
+          </Button>
+
+          {/* Quick stop button when speaking */}
+          {isSpeaking && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleQuickStop}
+              className="p-2 text-destructive hover:text-destructive-foreground hover:bg-destructive/20"
+              title="Stop Speaking"
+            >
+              <Stop size={16} />
+            </Button>
+          )}
+        </>
       )}
 
       {/* Voice settings popover */}
