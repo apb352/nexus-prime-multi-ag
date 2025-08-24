@@ -854,23 +854,23 @@ export function ChatWindow({
               </div>
             )}
           </div>
-        </div>
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
         
-        <div className="flex items-center space-x-2">
-          {/* Emergency voice stop when speaking */}
-          {agent.voiceSettings?.enabled && isSpeaking && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleStopSpeaking}
-              className="animate-pulse"
-              title="Stop Speaking"
-            >
-              <Stop size={16} className="mr-1" />
-              Stop Voice
-            </Button>
-          )}
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[2500]">
+              {AI_MODELS.map((model) => (
+                <SelectItem key={model.value} value={model.value}>
+                  {model.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           
+          <VoiceControls
+            voiceSettings={agent.voiceSettings}
+            onVoiceSettingsChange={handleVoiceSettingsChange}
           <Select value={selectedModel} onValueChange={setSelectedModel}>
           <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="w-40 h-8 text-xs">
