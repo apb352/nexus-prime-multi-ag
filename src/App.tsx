@@ -7,8 +7,12 @@ import { DebugPanel } from '@/components/DebugPanel';
 import { EmergencyStop } from '@/components/EmergencyStop';
 import { DiscordStatus } from '@/components/DiscordStatus';
 import { TestFixes } from '@/test-fixes';
+import { EmergencyStopTest } from '@/components/EmergencyStopTest';
 import { useAgents } from '@/hooks/use-agents';
+import { windowManager } from '@/lib/window-manager';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 function App() {
   const [chatWindows, setChatWindows] = useKV<ChatWindowType[]>('nexus-chat-windows', []);
@@ -82,16 +86,38 @@ function App() {
   };
 
   const handleStopAll = () => {
-    // Close all chat windows
-    setChatWindows([]);
-    // Update all agents to inactive status
-    chatWindows.forEach(window => {
-      updateAgentStatus(window.agentId, false);
+    console.log('Emergency stop all triggered');
+    
+    // Force stop all ongoing operations in all windows
+    windowManager.forceStopAllWindows();
+    
+    // Update all agents to inactive status using current windows
+    setChatWindows((currentWindows) => {
+      console.log('Stopping', currentWindows.length, 'windows');
+      
+      // First update agent statuses
+      currentWindows.forEach(window => {
+        updateAgentStatus(window.agentId, false);
+      });
+      // Then clear all windows
+      return [];
     });
+    
+    // Show confirmation toast
+    toast.success('Emergency stop activated - all AI operations stopped');
   };
 
   const handleStopWindow = (windowId: string) => {
+    console.log('Emergency stop window triggered for:', windowId);
+    
+    // Force stop operations in specific window
+    windowManager.forceStopWindow(windowId);
+    
+    // Then close the window normally
     handleCloseWindow(windowId);
+    
+    // Show confirmation toast
+    toast.success('Window stopped and closed');
   };
 
   const handleUpdateSize = (windowId: string, size: { width: number; height: number }) => {
@@ -161,13 +187,17 @@ function App() {
       
       {/* Test fixes component - only in development */}
       {import.meta.env.DEV && (
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 space-y-2">
+          <EmergencyStopTest />
           <TestFixes />
         </div>
       )}
       
       {/* Debug Panel */}
       {showDebug && <DebugPanel />}
+      
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }

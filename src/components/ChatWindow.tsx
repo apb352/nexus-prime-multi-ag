@@ -20,6 +20,8 @@ import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service
 import { discordService } from '@/lib/discord-service';
 import { ImageService, ImageSettings } from '@/lib/image-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
+import { windowManager } from '@/lib/window-manager';
+import { toast } from 'sonner';
 
 interface ChatWindowProps {
   window: ChatWindowType;
@@ -78,6 +80,7 @@ export function ChatWindow({
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   const { addMessage, getAgentHistory } = useChatHistory();
   const { updateAgent } = useAgents();
@@ -89,11 +92,80 @@ export function ChatWindow({
     }
   }, [messages]);
 
+  // Cleanup function to stop any ongoing operations when component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // Stop any ongoing voice synthesis
+      if (isSpeaking) {
+        voiceService.stopSpeaking();
+        setIsSpeaking(false);
+        setShowSpeakingOverlay(false);
+        setSpeakingMessageId(null);
+      }
+      // Stop any image generation
+      if (isGeneratingImage) {
+        setIsGeneratingImage(false);
+      }
+      // Reset loading states
+      setIsLoading(false);
+    };
+  }, [isSpeaking, isGeneratingImage]);
+
+  // Function to force stop all operations
+  const forceStopAllOperations = () => {
+    console.log('Emergency stop activated for window:', window.id);
+    
+    // Cancel any ongoing API requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    
+    // Stop voice synthesis
+    if (isSpeaking) {
+      voiceService.stopSpeaking();
+      setIsSpeaking(false);
+      setShowSpeakingOverlay(false);
+      setSpeakingMessageId(null);
+    }
+    
+    // Stop image generation
+    if (isGeneratingImage) {
+      setIsGeneratingImage(false);
+    }
+    
+    // Reset loading states
+    setIsLoading(false);
+    setIsTestMode(false);
+    
+    // Show notification to user
+    toast.warning(`Emergency stop activated for ${agent.name}`);
+    
+    console.log('Emergency stop completed for window:', window.id);
+  };
+
+  // Register force stop with parent component
+  useEffect(() => {
+    // Register this window's stop handler
+    windowManager.registerStopHandler(window.id, forceStopAllOperations);
+    
+    // Cleanup on unmount
+    return () => {
+      windowManager.unregisterStopHandler(window.id);
+    };
+  }, [window.id]);
+
   const handleTestAPI = async () => {
     if (isLoading) return;
     
     setIsLoading(true);
     setIsTestMode(true);
+    
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
     
     try {
       console.log('Testing basic API connectivity...');
@@ -104,6 +176,12 @@ export function ChatWindow({
       
       const testPrompt = spark.llmPrompt`Hello! This is a simple test message. Please respond with "API test successful".`;
       const response = await spark.llm(testPrompt, selectedModel);
+      
+      // Check if request was aborted after completion  
+      if (abortControllerRef.current?.signal.aborted) {
+        console.log('Test request was aborted');
+        return;
+      }
       
       addMessage(agent.id, {
         content: `API Test Result: ${response}`,
@@ -123,6 +201,7 @@ export function ChatWindow({
     } finally {
       setIsLoading(false);
       setIsTestMode(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -206,6 +285,9 @@ export function ChatWindow({
     const userMessage = cleanUserMessage(message.trim());
     setMessage('');
     setIsLoading(true);
+
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     // Add user message
     addMessage(agent.id, {
@@ -300,6 +382,12 @@ export function ChatWindow({
         console.log('Calling spark.llm with model:', selectedModel);
         aiResponse = await spark.llm(finalPrompt, selectedModel);
         
+        // Check if request was aborted after completion
+        if (abortControllerRef.current?.signal.aborted) {
+          console.log('Request was aborted, skipping response processing');
+          return;
+        }
+        
       } catch (enhancedError) {
         console.log('Enhanced prompt failed, trying basic prompt...', enhancedError);
         
@@ -318,6 +406,12 @@ export function ChatWindow({
             const basicPrompt = spark.llmPrompt`${basicPromptText}`;
             aiResponse = await spark.llm(basicPrompt, selectedModel);
             
+            // Check if request was aborted after completion
+            if (abortControllerRef.current?.signal.aborted) {
+              console.log('Request was aborted, skipping response processing');
+              return;
+            }
+            
           } catch (basicError) {
             console.log('Basic prompt failed, trying minimal prompt...', basicError);
             
@@ -334,6 +428,12 @@ export function ChatWindow({
                 // Final fallback - ultra-simple prompt
                 const minimalPrompt = spark.llmPrompt`Please help with: ${userMessage}`;
                 aiResponse = await spark.llm(minimalPrompt, selectedModel);
+                
+                // Check if request was aborted after completion
+                if (abortControllerRef.current?.signal.aborted) {
+                  console.log('Request was aborted, skipping response processing');
+                  return;
+                }
               } catch (minimalError) {
                 console.log('All prompts failed, providing fallback response...', minimalError);
                 
@@ -491,6 +591,7 @@ export function ChatWindow({
       }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
