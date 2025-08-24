@@ -32,38 +32,10 @@ export class ImageService {
     }
 
     try {
-      // Enhanced prompt with style
-      const enhancedPrompt = this.enhancePrompt(prompt, settings);
+      console.log('Generating artistic representation for:', prompt);
       
-      // Create a properly formatted image generation request
-      const imagePrompt = spark.llmPrompt`I need to generate an image with the following description: ${enhancedPrompt}
-
-Please create a detailed visual representation with these specifications:
-- Style: ${settings.imageStyle}
-- Quality: ${settings.quality}
-- Dimensions: ${settings.maxCanvasSize}x${settings.maxCanvasSize} pixels
-
-Generate this as an actual image that can be displayed to the user. The image should be creative, detailed, and match the requested style and prompt exactly.`;
-
-      try {
-        // Attempt to use the LLM for actual image generation
-        const response = await spark.llm(imagePrompt, 'gpt-4o');
-        
-        // Check if response contains a valid image URL or data URL
-        const urlMatch = response.match(/(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp))|(data:image\/[^;]+;base64,[^"'\s]+)/i);
-        
-        if (urlMatch) {
-          return urlMatch[0];
-        }
-        
-        // If no valid image URL found in response, fall back to placeholder
-        console.log('No valid image URL in LLM response, using placeholder');
-        return this.createPlaceholderImage(prompt, settings);
-        
-      } catch (llmError) {
-        console.log('LLM image generation failed, using placeholder:', llmError);
-        return this.createPlaceholderImage(prompt, settings);
-      }
+      // Create an enhanced artistic representation using canvas
+      return this.createArtisticImage(prompt, settings);
       
     } catch (error) {
       console.error('Error generating image:', error);
@@ -88,13 +60,13 @@ Generate this as an actual image that can be displayed to the user. The image sh
     return `${prompt}, ${styleModifiers[settings.imageStyle]}, ${qualityModifiers[settings.quality]}`;
   }
 
-  private createPlaceholderImage(prompt: string, settings: ImageSettings): string {
-    // Only create placeholder in browser environment
+  private createArtisticImage(prompt: string, settings: ImageSettings): string {
+    // Only create images in browser environment
     if (typeof document === 'undefined') {
       throw new Error('Canvas not available in server environment');
     }
     
-    // Create a canvas with the generated image placeholder
+    // Create a canvas with the generated image
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
@@ -103,156 +75,512 @@ Generate this as an actual image that can be displayed to the user. The image sh
     canvas.width = Math.min(settings.maxCanvasSize, 512);
     canvas.height = Math.min(settings.maxCanvasSize, 512);
 
-    // Create a more sophisticated gradient background based on style
-    const gradient = ctx.createRadialGradient(
-      canvas.width/2, canvas.height/2, 0,
-      canvas.width/2, canvas.height/2, canvas.width/2
-    );
-    
-    switch (settings.imageStyle) {
-      case 'cyberpunk':
-        gradient.addColorStop(0, '#8b5cf6');
-        gradient.addColorStop(0.6, '#6366f1');
-        gradient.addColorStop(1, '#0f0f23');
-        break;
-      case 'minimalist':
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.8, '#f1f5f9');
-        gradient.addColorStop(1, '#e2e8f0');
-        break;
-      case 'artistic':
-        gradient.addColorStop(0, '#fbbf24');
-        gradient.addColorStop(0.5, '#f59e0b');
-        gradient.addColorStop(1, '#d97706');
-        break;
-      case 'cartoon':
-        gradient.addColorStop(0, '#fde047');
-        gradient.addColorStop(0.5, '#facc15');
-        gradient.addColorStop(1, '#eab308');
-        break;
-      default: // realistic
-        gradient.addColorStop(0, '#64748b');
-        gradient.addColorStop(0.7, '#475569');
-        gradient.addColorStop(1, '#334155');
-    }
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Add decorative elements based on style
-    this.addStyleDecorations(ctx, canvas, settings.imageStyle);
-
-    // Add text with better styling
-    ctx.fillStyle = settings.imageStyle === 'minimalist' ? '#1f2937' : '#ffffff';
-    ctx.font = `bold ${Math.max(16, canvas.width / 20)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    
-    // Wrap text with better formatting
-    const words = prompt.split(' ');
-    const lines = [];
-    let currentLine = '';
-    const maxWidth = canvas.width - 60;
-    
-    for (const word of words) {
-      const testLine = currentLine + (currentLine ? ' ' : '') + word;
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    if (currentLine) lines.push(currentLine);
-
-    const lineHeight = Math.max(24, canvas.height / 15);
-    const startY = (canvas.height - (lines.length - 1) * lineHeight) / 2;
-    
-    lines.forEach((line, index) => {
-      ctx.fillText(line, canvas.width / 2, startY + index * lineHeight);
-    });
-
-    // Reset shadow for watermark
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-
-    // Add "AI Generated" watermark with style badge
-    ctx.font = `${Math.max(10, canvas.width / 40)}px Arial`;
-    ctx.fillStyle = settings.imageStyle === 'minimalist' ? '#6b7280' : '#9ca3af';
-    ctx.fillText('✨ AI Generated', canvas.width / 2, canvas.height - 30);
-    
-    // Add style indicator
-    ctx.fillText(`Style: ${settings.imageStyle}`, canvas.width / 2, canvas.height - 15);
+    // Generate art based on prompt content and style
+    this.generatePromptBasedArt(ctx, canvas, prompt, settings);
 
     return canvas.toDataURL('image/png');
   }
 
-  private addStyleDecorations(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, style: string) {
+  private generatePromptBasedArt(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, prompt: string, settings: ImageSettings) {
+    const promptLower = prompt.toLowerCase();
+    
+    // Analyze prompt for key visual elements
+    const isNature = /nature|tree|forest|flower|mountain|ocean|sea|lake|sky|cloud|sunset|sunrise|landscape/.test(promptLower);
+    const isAnimal = /cat|dog|bird|fish|animal|lion|elephant|horse|rabbit/.test(promptLower);
+    const isAbstract = /abstract|geometric|pattern|design|art|creative/.test(promptLower);
+    const isSpace = /space|star|galaxy|planet|universe|cosmic|nebula/.test(promptLower);
+    const isCity = /city|building|urban|street|architecture|skyline/.test(promptLower);
+    const isSunset = /sunset|sunrise|golden hour|dusk|dawn/.test(promptLower);
+    const isOcean = /ocean|sea|water|wave|beach|coast/.test(promptLower);
+    
+    // Create sophisticated background based on theme
+    if (isSunset) {
+      this.createSunsetBackground(ctx, canvas);
+    } else if (isOcean) {
+      this.createOceanBackground(ctx, canvas);
+    } else if (isSpace) {
+      this.createSpaceBackground(ctx, canvas);
+    } else if (isNature) {
+      this.createNatureBackground(ctx, canvas);
+    } else if (isCity) {
+      this.createCityBackground(ctx, canvas);
+    } else {
+      this.createAbstractBackground(ctx, canvas, settings);
+    }
+
+    // Add style-specific elements
+    this.addStyleSpecificElements(ctx, canvas, settings.imageStyle, promptLower);
+
+    // Add a subtle title/description
+    this.addArtisticTitle(ctx, canvas, prompt, settings);
+  }
+
+  private createSunsetBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Create sunset gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#FFD700'); // Golden yellow top
+    gradient.addColorStop(0.3, '#FF8C00'); // Orange
+    gradient.addColorStop(0.6, '#FF4500'); // Red orange
+    gradient.addColorStop(0.8, '#8B0000'); // Dark red
+    gradient.addColorStop(1, '#2F1B69'); // Deep purple bottom
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add sun circle
+    const sunX = canvas.width * 0.7;
+    const sunY = canvas.height * 0.3;
+    const sunRadius = canvas.width * 0.08;
+    
+    const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 2);
+    sunGradient.addColorStop(0, '#FFFF00');
+    sunGradient.addColorStop(0.7, '#FFA500');
+    sunGradient.addColorStop(1, 'rgba(255, 165, 0, 0)');
+    
+    ctx.fillStyle = sunGradient;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius * 2, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Add silhouette elements
+    this.addSilhouettes(ctx, canvas);
+  }
+
+  private createOceanBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Ocean gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB'); // Sky blue
+    gradient.addColorStop(0.6, '#4682B4'); // Steel blue
+    gradient.addColorStop(1, '#191970'); // Midnight blue
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add waves
+    this.addWaves(ctx, canvas);
+    
+    // Add foam effects
+    this.addFoamEffects(ctx, canvas);
+  }
+
+  private createSpaceBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Deep space background
+    const gradient = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/2, 0,
+      canvas.width/2, canvas.height/2, canvas.width/2
+    );
+    gradient.addColorStop(0, '#1a1a2e');
+    gradient.addColorStop(0.5, '#16213e');
+    gradient.addColorStop(1, '#0f0f23');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add stars
+    this.addStars(ctx, canvas);
+    
+    // Add nebula effects
+    this.addNebulaEffects(ctx, canvas);
+  }
+
+  private createNatureBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Nature gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB'); // Sky
+    gradient.addColorStop(0.4, '#98FB98'); // Light green
+    gradient.addColorStop(1, '#228B22'); // Forest green
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add trees and natural elements
+    this.addTrees(ctx, canvas);
+  }
+
+  private createCityBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // City gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#4169E1'); // Royal blue sky
+    gradient.addColorStop(0.6, '#696969'); // Dim gray
+    gradient.addColorStop(1, '#2F4F4F'); // Dark slate gray
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add building silhouettes
+    this.addBuildings(ctx, canvas);
+  }
+
+  private createAbstractBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, settings: ImageSettings) {
+    // Create abstract art based on style
+    switch (settings.imageStyle) {
+      case 'cyberpunk':
+        this.createCyberpunkAbstract(ctx, canvas);
+        break;
+      case 'minimalist':
+        this.createMinimalistAbstract(ctx, canvas);
+        break;
+      case 'artistic':
+        this.createArtisticAbstract(ctx, canvas);
+        break;
+      default:
+        this.createGenericAbstract(ctx, canvas);
+    }
+  }
+
+  private addSilhouettes(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    
+    // Add mountain silhouettes
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height * 0.7);
+    ctx.lineTo(canvas.width * 0.3, canvas.height * 0.5);
+    ctx.lineTo(canvas.width * 0.6, canvas.height * 0.6);
+    ctx.lineTo(canvas.width, canvas.height * 0.4);
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(0, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  private addWaves(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const waveHeight = canvas.height * 0.1;
+    const waveY = canvas.height * 0.8;
+    
+    for (let i = 0; i < 3; i++) {
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 - i * 0.1})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      
+      for (let x = 0; x <= canvas.width; x += 10) {
+        const y = waveY + Math.sin((x / 50) + (i * Math.PI / 3)) * waveHeight;
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  private addFoamEffects(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height * 0.8 + Math.random() * canvas.height * 0.2;
+      const radius = Math.random() * 8 + 2;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private addStars(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = '#FFFFFF';
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = Math.random() * 2 + 0.5;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private addNebulaEffects(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
+    
+    for (let i = 0; i < 5; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 100 + 50;
+      
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, colors[i] + '40');
+      gradient.addColorStop(1, colors[i] + '00');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private addTrees(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = 'rgba(34, 139, 34, 0.8)';
+    
+    for (let i = 0; i < 8; i++) {
+      const x = (canvas.width / 8) * i + Math.random() * 30;
+      const treeHeight = canvas.height * 0.3 + Math.random() * canvas.height * 0.2;
+      const treeWidth = 20 + Math.random() * 20;
+      
+      // Tree trunk
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(x - 5, canvas.height - treeHeight * 0.3, 10, treeHeight * 0.3);
+      
+      // Tree foliage
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.arc(x, canvas.height - treeHeight, treeWidth, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private addBuildings(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    
+    for (let i = 0; i < 10; i++) {
+      const x = (canvas.width / 10) * i;
+      const buildingHeight = canvas.height * 0.3 + Math.random() * canvas.height * 0.4;
+      const buildingWidth = canvas.width / 10;
+      
+      ctx.fillRect(x, canvas.height - buildingHeight, buildingWidth - 2, buildingHeight);
+      
+      // Add windows
+      ctx.fillStyle = '#FFD700';
+      for (let w = 0; w < 3; w++) {
+        for (let h = 0; h < Math.floor(buildingHeight / 20); h++) {
+          if (Math.random() > 0.3) {
+            ctx.fillRect(
+              x + 5 + w * 8,
+              canvas.height - buildingHeight + h * 20 + 5,
+              4, 6
+            );
+          }
+        }
+      }
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    }
+  }
+
+  private createCyberpunkAbstract(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Cyberpunk gradient
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#0f0f23');
+    gradient.addColorStop(0.5, '#8b5cf6');
+    gradient.addColorStop(1, '#06b6d4');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add neon grid
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.3;
+    
+    for (let x = 0; x < canvas.width; x += 40) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    
+    for (let y = 0; y < canvas.height; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    
+    ctx.globalAlpha = 1;
+  }
+
+  private createMinimalistAbstract(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Clean white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add minimal geometric shapes
+    const colors = ['#e5e7eb', '#d1d5db', '#9ca3af'];
+    
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = colors[i];
+      const size = 80 + i * 40;
+      const x = canvas.width / 2 - size / 2;
+      const y = canvas.height / 2 - size / 2 + i * 20;
+      
+      ctx.beginPath();
+      ctx.arc(x + size/2, y + size/2, size/2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private createArtisticAbstract(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Warm artistic gradient
+    const gradient = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/2, 0,
+      canvas.width/2, canvas.height/2, canvas.width/2
+    );
+    gradient.addColorStop(0, '#fbbf24');
+    gradient.addColorStop(0.5, '#f59e0b');
+    gradient.addColorStop(1, '#d97706');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add artistic brush strokes
+    const colors = ['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.2)', 'rgba(0,0,0,0.1)'];
+    
+    for (let i = 0; i < 15; i++) {
+      ctx.strokeStyle = colors[i % colors.length];
+      ctx.lineWidth = Math.random() * 20 + 5;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+  }
+
+  private createGenericAbstract(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Generic colorful abstract
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
+    
+    for (let i = 0; i < colors.length; i++) {
+      const radius = (canvas.width / colors.length) * (i + 1);
+      const gradient = ctx.createRadialGradient(
+        canvas.width/2, canvas.height/2, 0,
+        canvas.width/2, canvas.height/2, radius
+      );
+      gradient.addColorStop(0, colors[i] + '40');
+      gradient.addColorStop(1, colors[i] + '00');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(canvas.width/2, canvas.height/2, radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  private addStyleSpecificElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, style: string, prompt: string) {
     switch (style) {
       case 'cyberpunk':
-        // Add glowing lines
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#00ff88';
-        ctx.shadowBlur = 10;
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-          ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-          ctx.stroke();
-        }
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
+        this.addCyberpunkElements(ctx, canvas);
         break;
-        
-      case 'artistic':
-        // Add paint splatters
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        for (let i = 0; i < 8; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            Math.random() * canvas.width,
-            Math.random() * canvas.height,
-            Math.random() * 20 + 5,
-            0, 2 * Math.PI
-          );
-          ctx.fill();
-        }
-        break;
-        
       case 'cartoon':
-        // Add colorful circles
-        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
-        colors.forEach((color, i) => {
-          ctx.fillStyle = color + '80'; // Add transparency
-          ctx.beginPath();
-          ctx.arc(
-            (canvas.width / colors.length) * (i + 0.5),
-            canvas.height * 0.15,
-            15,
-            0, 2 * Math.PI
-          );
-          ctx.fill();
-        });
+        this.addCartoonElements(ctx, canvas);
         break;
-        
-      case 'minimalist':
-        // Add subtle geometric shapes
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.rect(canvas.width * 0.1, canvas.height * 0.1, canvas.width * 0.8, canvas.height * 0.8);
-        ctx.stroke();
+      case 'artistic':
+        this.addArtisticElements(ctx, canvas);
         break;
     }
   }
+
+  private addCyberpunkElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add glowing lines and circuit patterns
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 10;
+    
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+    
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+  }
+
+  private addCartoonElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add colorful cartoon-style shapes
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7'];
+    
+    for (let i = 0; i < 10; i++) {
+      ctx.fillStyle = colors[i % colors.length];
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = Math.random() * 30 + 10;
+      
+      if (i % 3 === 0) {
+        // Circle
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, 2 * Math.PI);
+        ctx.fill();
+      } else if (i % 3 === 1) {
+        // Square
+        ctx.fillRect(x - size/2, y - size/2, size, size);
+      } else {
+        // Triangle
+        ctx.beginPath();
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x - size, y + size);
+        ctx.lineTo(x + size, y + size);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  private addArtisticElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add artistic paint splatters and brush effects
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = `hsla(${Math.random() * 360}, 70%, 60%, 0.4)`;
+      
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = Math.random() * 40 + 10;
+      
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add smaller dots around main splatter
+      for (let j = 0; j < 5; j++) {
+        const offsetX = (Math.random() - 0.5) * 60;
+        const offsetY = (Math.random() - 0.5) * 60;
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, Math.random() * 8 + 2, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  }
+
+  private addArtisticTitle(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, prompt: string, settings: ImageSettings) {
+    // Add a stylized title/watermark
+    ctx.font = `bold ${Math.max(14, canvas.width / 25)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    
+    // Add shadow for better readability
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    
+    // Choose text color based on style
+    if (settings.imageStyle === 'minimalist') {
+      ctx.fillStyle = '#374151';
+    } else if (settings.imageStyle === 'cyberpunk') {
+      ctx.fillStyle = '#00ff88';
+    } else {
+      ctx.fillStyle = '#ffffff';
+    }
+    
+    // Truncate prompt for display
+    const displayPrompt = prompt.length > 30 ? prompt.substring(0, 27) + '...' : prompt;
+    ctx.fillText(`"${displayPrompt}"`, canvas.width / 2, canvas.height - 40);
+    
+    // Add generation info
+    ctx.font = `${Math.max(10, canvas.width / 40)}px Arial`;
+    ctx.fillStyle = settings.imageStyle === 'minimalist' ? '#6b7280' : '#cbd5e1';
+    ctx.fillText(`✨ AI Generated • ${settings.imageStyle} style`, canvas.width / 2, canvas.height - 20);
+    
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }
+
+
 
   createCanvas(width: number, height: number): HTMLCanvasElement {
     if (typeof document === 'undefined') {

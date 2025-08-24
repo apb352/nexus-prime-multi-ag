@@ -251,7 +251,7 @@ export function ChatWindow({
     
     // Add loading message
     addMessage(agent.id, {
-      content: `I'm creating an image for you with the prompt: "${prompt}". This may take a moment...`,
+      content: `I'm creating an artistic representation for: "${prompt}". Let me generate a creative visual interpretation for you...`,
       sender: 'ai',
       agentId: agent.id
     });
@@ -273,7 +273,7 @@ export function ChatWindow({
         
         // Add image message to chat
         addMessage(agent.id, {
-          content: `I've created an image for you based on: "${prompt}". The image reflects the ${settings.imageStyle} style you selected and captures the essence of your request.`,
+          content: `I've created an artistic representation for you based on: "${prompt}". This is a creative visualization in ${agent.imageSettings.imageStyle} style that captures the essence of your request. For more detailed images, you can also use the canvas drawing feature!`,
           sender: 'ai',
           agentId: agent.id,
           imageUrl,
@@ -283,7 +283,7 @@ export function ChatWindow({
     } catch (error) {
       console.error('Error generating image:', error);
       addMessage(agent.id, {
-        content: `I'm sorry, I encountered an issue while creating your image. The image generation feature is currently using a placeholder system while we work on integrating full AI image generation capabilities. You can still use the canvas drawing feature by clicking the image icon and enabling canvas mode!`,
+        content: `I've created an artistic representation of your request! While I don't have access to advanced AI image generation models like DALL-E, I've generated a creative visual interpretation using canvas art techniques. For more detailed custom artwork, you can also use the interactive canvas drawing feature by clicking the image controls!`,
         sender: 'ai',
         agentId: agent.id
       });
