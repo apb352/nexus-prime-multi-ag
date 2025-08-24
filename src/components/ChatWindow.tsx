@@ -100,7 +100,7 @@ export function ChatWindow({
       }
       // Stop any ongoing voice synthesis
       if (isSpeaking) {
-        voiceService.stopSpeaking();
+        voiceService.stop();
         setIsSpeaking(false);
         setShowSpeakingOverlay(false);
         setSpeakingMessageId(null);
@@ -126,7 +126,7 @@ export function ChatWindow({
     
     // Stop voice synthesis
     if (isSpeaking) {
-      voiceService.stopSpeaking();
+      voiceService.stop();
       setIsSpeaking(false);
       setShowSpeakingOverlay(false);
       setSpeakingMessageId(null);
