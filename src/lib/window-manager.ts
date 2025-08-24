@@ -14,10 +14,17 @@ class WindowManager {
   unregisterStopHandler(windowId: string) {
     console.log('Unregistering stop handler for window:', windowId);
     this.stopHandlers.delete(windowId);
-  }
+   
 
-
+      } catch (error) {
     console.log('Force stopping window:', windowId);
+    this.stopHandlers.clear();
+
+    return 
+
+    return Array.from(t
+}
+export 
 
 
 
@@ -31,12 +38,12 @@ class WindowManager {
 
 
 
+    this.stopHandlers.clear();
 
 
 
 
 
-
-
+}
 
 export const windowManager = new WindowManager();
