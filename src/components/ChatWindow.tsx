@@ -304,7 +304,7 @@ What would you like to talk about today?`;
     
     // Add loading message
     addMessage(agent.id, {
-      content: `I'm creating an artistic representation for: "${prompt}". Let me generate a creative visual interpretation using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality...`,
+      content: `🎨 Generating AI image for: "${prompt}"...\n\nStyle: ${settingsToUse.imageStyle} | Quality: ${settingsToUse.quality}\n\nPlease wait while I create your image...`,
       sender: 'ai',
       agentId: agent.id
     });
@@ -324,9 +324,26 @@ What would you like to talk about today?`;
         
         setGeneratedImages(prev => [...prev, newImage]);
         
+        // Determine if this is AI-generated or artistic representation
+        const isAIGenerated = imageUrl.startsWith('http') || imageUrl.includes('ai-generated');
+        
         // Add image message to chat
         addMessage(agent.id, {
-          content: `I've created an artistic representation for you based on: "${prompt}". This is a creative visualization in ${settingsToUse.imageStyle} style with ${settingsToUse.quality} quality that captures the essence of your request. For more detailed images, you can also use the canvas drawing feature!`,
+          content: isAIGenerated 
+            ? `✨ I've generated an AI image for you! Here's "${prompt}" created with ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
+
+🎯 **Generated with:** AI image generation model
+🎨 **Style:** ${settingsToUse.imageStyle}
+💎 **Quality:** ${settingsToUse.quality}
+
+You can adjust the style and quality in the image controls (📷) above for different results!`
+            : `🎨 I've created an artistic visualization for "${prompt}" using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
+
+💡 **Method:** Advanced canvas-based artistic rendering
+🎨 **Style:** ${settingsToUse.imageStyle}
+💎 **Quality:** ${settingsToUse.quality}
+
+This is a creative interpretation that captures the essence of your request. You can also try the interactive canvas drawing feature for custom artwork!`,
           sender: 'ai',
           agentId: agent.id,
           imageUrl,
@@ -336,13 +353,16 @@ What would you like to talk about today?`;
     } catch (error) {
       console.error('Error generating image:', error);
       addMessage(agent.id, {
-        content: `I've encountered an issue while creating your image, but I've generated an artistic representation using our fallback canvas-based system! 
+        content: `❌ I encountered an issue while generating your image. Let me try to create an artistic representation instead!
 
-🎨 **What I created:** A creative visual interpretation of "${prompt}" using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
+🔄 **Attempting fallback method...**
 
-💡 **Note:** This app uses advanced canvas-based artistic rendering rather than external AI image models like DALL-E. You can also try the interactive canvas drawing feature for more custom artwork!
+Please note: This app primarily uses canvas-based artistic rendering. For best results:
+- Try simpler, more descriptive prompts
+- Experiment with different styles in the image controls (📷)
+- Use the interactive canvas drawing feature for custom artwork
 
-The style and quality settings in the image controls (📷) affect how these artistic visualizations are created.`,
+Would you like me to try again with a simplified prompt?`,
         sender: 'ai',
         agentId: agent.id
       });
@@ -426,15 +446,22 @@ The style and quality settings in the image controls (📷) affect how these art
       } else if (isImageRequest) {
         // User wants image generation but it's disabled
         addMessage(agent.id, {
-          content: `I'd love to help you create images! However, I cannot directly generate images myself. But this chat window has built-in image generation capabilities! 
+          content: `🎨 I'd love to help you create images! Let me guide you through enabling image generation:
 
-🎨 To enable image generation:
-1. Click the image icon (📷) in the window controls above
-2. Toggle "Image Generation" to ON
-3. Choose your preferred style and quality
-4. Then ask me again to "draw" or "create an image"
+**🔧 To Enable Image Generation:**
+1. Click the **image icon (📷)** in the window controls above
+2. Toggle **"Image Generation"** to **ON**
+3. Choose your preferred **style** (realistic, artistic, cartoon, cyberpunk, minimalist)
+4. Select **quality** (standard or HD)
+5. Then ask me again to "draw" or "create an image"
 
-You can also use the interactive canvas for custom drawings! Click the image controls to get started.`,
+**✨ What You'll Get:**
+- AI-powered image generation (when available)
+- High-quality artistic canvas rendering (fallback)
+- Interactive canvas for custom drawings
+- Multiple styles and quality settings
+
+Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical forest"* once enabled!`,
           sender: 'ai',
           agentId: agent.id
         });

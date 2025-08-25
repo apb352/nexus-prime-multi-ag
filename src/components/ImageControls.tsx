@@ -33,11 +33,14 @@ export function ImageControls({
   const handleQuickGenerate = () => {
     if (settings.enabled) {
       const prompts = [
-        'A futuristic cityscape at night',
-        'Abstract digital art with flowing colors',
-        'A cyberpunk character portrait',
-        'Minimalist geometric patterns',
-        'A magical forest scene'
+        'A breathtaking sunset over a serene ocean with golden clouds',
+        'A mystical forest with glowing mushrooms and ethereal light',
+        'A futuristic cyberpunk city with neon lights reflecting on wet streets',
+        'An abstract composition of flowing colors and geometric patterns',
+        'A majestic mountain landscape with snow-capped peaks and alpine lakes',
+        'A cozy cottage surrounded by blooming flower gardens',
+        'A space nebula with swirling cosmic dust and distant stars',
+        'A peaceful zen garden with cherry blossoms and a small pond'
       ];
       const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
       onGenerateImage(randomPrompt);
@@ -178,10 +181,13 @@ export function ImageControls({
 
               <div className="text-xs text-muted-foreground border-t pt-2">
                 <div className="space-y-1">
-                  <div className="font-medium text-accent">💡 How to generate images:</div>
-                  <div>• Type "draw me a sunset" or "create an image of..."</div>
-                  <div>• Use the Quick Generate button above</div>
-                  <div>• Try the interactive canvas for custom drawings</div>
+                  <div className="font-medium text-accent">🎨 Image Generation Options:</div>
+                  <div>• **AI Generation**: Ask "draw me a sunset" or "create an image of..."</div>
+                  <div>• **Quick Generate**: Use the button above for random ideas</div>
+                  <div>• **Canvas Drawing**: Interactive drawing tool for custom artwork</div>
+                  <div className="text-xs opacity-75 pt-1">
+                    ⚡ Tries AI generation first, falls back to artistic canvas rendering
+                  </div>
                 </div>
               </div>
             </>

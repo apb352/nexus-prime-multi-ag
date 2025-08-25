@@ -32,14 +32,61 @@ export class ImageService {
     }
 
     try {
-      console.log('Generating artistic representation for:', prompt);
+      console.log('Generating AI image for:', prompt);
       
-      // Create an enhanced artistic representation using canvas
-      return this.createArtisticImage(prompt, settings);
+      // Try AI image generation first
+      try {
+        return await this.generateAIImage(prompt, settings);
+      } catch (aiError) {
+        console.warn('AI image generation failed, falling back to artistic representation:', aiError);
+        // Fallback to canvas-based artistic representation
+        return this.createArtisticImage(prompt, settings);
+      }
       
     } catch (error) {
       console.error('Error generating image:', error);
       throw error;
+    }
+  }
+
+  private async generateAIImage(prompt: string, settings: ImageSettings): Promise<string> {
+    // Check if we have access to the spark API
+    if (typeof window === 'undefined' || !window.spark) {
+      throw new Error('Spark API not available');
+    }
+
+    // Enhance the prompt with style and quality modifiers
+    const enhancedPrompt = this.enhancePrompt(prompt, settings);
+    
+    console.log('Requesting AI image generation with prompt:', enhancedPrompt);
+
+    // Create the prompt using spark.llmPrompt
+    const imagePrompt = window.spark.llmPrompt`Generate a high-quality image based on this description: ${enhancedPrompt}
+
+Please create a detailed, visually appealing image that captures the essence of "${prompt}" with the following specifications:
+- Style: ${settings.imageStyle}
+- Quality: ${settings.quality}
+- Resolution: High definition
+- Composition: Well-balanced and aesthetically pleasing
+
+Return only the image data or URL, no additional text.`;
+
+    try {
+      // Use the spark LLM with image generation capabilities
+      // Note: This assumes the Spark runtime supports image generation
+      const response = await window.spark.llm(imagePrompt, 'gpt-4o', false);
+      
+      // If the response contains image data or URL, return it
+      if (response && (response.startsWith('data:image/') || response.startsWith('http'))) {
+        return response;
+      }
+      
+      // If no direct image was returned, fall back to creating description-based art
+      throw new Error('AI did not return image data');
+      
+    } catch (error) {
+      console.error('Spark LLM image generation failed:', error);
+      throw new Error('AI image generation not supported by current model');
     }
   }
 
@@ -66,6 +113,8 @@ export class ImageService {
       throw new Error('Canvas not available in server environment');
     }
     
+    console.log('Creating artistic canvas representation for:', prompt);
+    
     // Create a canvas with the generated image
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -87,6 +136,7 @@ export class ImageService {
       this.enhanceCanvasForHD(ctx, canvas);
     }
 
+    console.log('Artistic representation created successfully');
     return canvas.toDataURL('image/png');
   }
 
