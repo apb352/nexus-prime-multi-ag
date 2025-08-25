@@ -324,26 +324,16 @@ What would you like to talk about today?`;
         
         setGeneratedImages(prev => [...prev, newImage]);
         
-        // Determine if this is AI-generated or artistic representation
-        const isAIGenerated = imageUrl.startsWith('http') || imageUrl.includes('ai-generated');
-        
         // Add image message to chat
         addMessage(agent.id, {
-          content: isAIGenerated 
-            ? `✨ I've generated an AI image for you! Here's "${prompt}" created with ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
+          content: `✨ I've created an artistic visualization for "${prompt}" using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality!
 
-🎯 **Generated with:** AI image generation model
-🎨 **Style:** ${settingsToUse.imageStyle}
+🎨 **Creation Method:** Advanced canvas-based artistic rendering
+🖼️ **Style:** ${settingsToUse.imageStyle}
 💎 **Quality:** ${settingsToUse.quality}
+📐 **Resolution:** ${settingsToUse.maxCanvasSize}px
 
-You can adjust the style and quality in the image controls (📷) above for different results!`
-            : `🎨 I've created an artistic visualization for "${prompt}" using ${settingsToUse.imageStyle} style and ${settingsToUse.quality} quality.
-
-💡 **Method:** Advanced canvas-based artistic rendering
-🎨 **Style:** ${settingsToUse.imageStyle}
-💎 **Quality:** ${settingsToUse.quality}
-
-This is a creative interpretation that captures the essence of your request. You can also try the interactive canvas drawing feature for custom artwork!`,
+This is a creative interpretation that captures the essence of your request. You can adjust the style and quality in the image controls (📷) above for different artistic effects, or try the interactive canvas drawing feature for custom artwork!`,
           sender: 'ai',
           agentId: agent.id,
           imageUrl,
@@ -353,16 +343,19 @@ This is a creative interpretation that captures the essence of your request. You
     } catch (error) {
       console.error('Error generating image:', error);
       addMessage(agent.id, {
-        content: `❌ I encountered an issue while generating your image. Let me try to create an artistic representation instead!
+        content: `❌ I encountered an issue while generating your image. Let me help you troubleshoot:
 
-🔄 **Attempting fallback method...**
+🔧 **Quick Fixes:**
+1. **Check Settings**: Click the image icon (📷) above and ensure "AI Image Generation" is enabled
+2. **Try Simpler Prompts**: Use descriptive but simple requests like "a cat" or "sunset over ocean"
+3. **Different Style**: Try changing the art style (realistic, cyberpunk, artistic, etc.)
 
-Please note: This app primarily uses canvas-based artistic rendering. For best results:
-- Try simpler, more descriptive prompts
-- Experiment with different styles in the image controls (📷)
-- Use the interactive canvas drawing feature for custom artwork
+🎨 **Alternative Options:**
+- Use the interactive **Canvas Drawing** feature for custom artwork
+- Try the **Quick Generate** button in image controls for inspiration
+- Experiment with different quality settings (Standard vs HD)
 
-Would you like me to try again with a simplified prompt?`,
+Would you like me to try generating a simpler version, or would you prefer to use the canvas drawing tool?`,
         sender: 'ai',
         agentId: agent.id
       });
@@ -421,28 +414,60 @@ Would you like me to try again with a simplified prompt?`,
         'can you draw', 'can you create', 'can you make', 'draw me',
         'paint me', 'create art', 'make art', 'generate art', 'design',
         'illustrate', 'sketch', 'render', 'produce image', 'create visual',
-        'make visual', 'generate visual', 'picture of', 'image of'
+        'make visual', 'generate visual', 'picture of', 'image of',
+        'drawing of', 'painting of', 'illustration of', 'sketch of',
+        'pic of', 'photo of', 'artwork of', 'visual of'
       ];
       
       const isImageRequest = imageGenerationKeywords.some(keyword => 
         userMessage.toLowerCase().includes(keyword)
-      );
+      ) || /\b(draw|paint|create|generate|make|design|illustrate|sketch|render|visualize|produce)\s+(?:me\s+)?(?:a\s+|an\s+)?(?:picture|image|drawing|art|visual|illustration|sketch|photo|pic)/i.test(userMessage);
 
       if (isImageRequest && currentImageSettings?.enabled && currentImageSettings.imageGenEnabled) {
         // Extract prompt for image generation
         let imagePrompt = userMessage;
         
-        // Clean up the prompt by removing generation commands
-        const cleanPrompt = (imagePrompt || '')
+        // Clean up the prompt by removing generation commands but preserve the core subject
+        let cleanPrompt = (imagePrompt || '')
           .replace(/(?:generate|create|draw|paint|visualize|show me|make|design|illustrate|sketch|render|produce)\s+(?:an?\s+)?(?:image|picture|drawing|art|visual|illustration|sketch)\s+(?:of\s+)?/gi, '')
           .replace(/(?:can you\s+)?(?:please\s+)?(?:generate|create|draw|paint|make|design|illustrate|sketch|render)\s+/gi, '')
           .replace(/(?:picture|image|drawing|art|visual|illustration|sketch)\s+of\s+/gi, '')
           .trim();
         
-        if (cleanPrompt) {
-          await handleGenerateImage(cleanPrompt);
-          return; // Exit early as we've handled the image generation
+        // If the cleaning removed too much, try a more basic approach
+        if (!cleanPrompt || cleanPrompt.length < 3) {
+          // Extract everything after common image generation prefixes
+          const patterns = [
+            /(?:draw|paint|create|generate|make|design|illustrate|sketch)\s+(?:me\s+)?(?:a\s+|an\s+)?(.*)/i,
+            /(?:show me|visualize|render|produce)\s+(?:a\s+|an\s+)?(.*)/i,
+            /(?:image|picture|drawing|art|illustration|sketch)\s+of\s+(.*)/i
+          ];
+          
+          for (const pattern of patterns) {
+            const match = userMessage.match(pattern);
+            if (match && match[1] && match[1].trim()) {
+              cleanPrompt = match[1].trim();
+              break;
+            }
+          }
+          
+          // If still no good prompt, use the original message
+          if (!cleanPrompt || cleanPrompt.length < 3) {
+            cleanPrompt = userMessage.replace(/\b(draw|paint|create|generate|make|design|illustrate|sketch|show|visualize|render|produce|image|picture|drawing|art|illustration)\b/gi, '').trim();
+          }
+          
+          // Final fallback
+          if (!cleanPrompt || cleanPrompt.length < 3) {
+            cleanPrompt = 'a beautiful artistic scene';
+          }
         }
+        
+        console.log('Original message:', userMessage);
+        console.log('Cleaned prompt for image generation:', cleanPrompt);
+        
+        await handleGenerateImage(cleanPrompt);
+        setIsLoading(false);
+        return; // Exit early as we've handled the image generation
       } else if (isImageRequest) {
         // User wants image generation but it's disabled
         addMessage(agent.id, {

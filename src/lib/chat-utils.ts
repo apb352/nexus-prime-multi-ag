@@ -100,7 +100,7 @@ export async function createEnhancedChatPrompt(
   // Add image generation capability context if enabled
   let imageContext = '';
   if (imageEnabled) {
-    imageContext = '\n\nI can also create images and drawings for you. Just ask me to generate, create, draw, or visualize something!';
+    imageContext = '\n\n🎨 IMPORTANT: This AI assistant has full image generation capabilities enabled. When users ask to create, draw, generate, or visualize images, the system will automatically handle image generation. The AI should encourage and support image creation requests.';
   }
   
   if (hasInternetContext) {

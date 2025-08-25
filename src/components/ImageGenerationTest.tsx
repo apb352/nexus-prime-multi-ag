@@ -9,7 +9,7 @@ import { TestTube2, Download, Wand2 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 export function ImageGenerationTest() {
-  const [prompt, setPrompt] = useState('A beautiful sunset over mountains');
+  const [prompt, setPrompt] = useState('A cute cat sitting in a garden');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [style, setStyle] = useState<'realistic' | 'artistic' | 'cartoon' | 'cyberpunk' | 'minimalist'>('realistic');
@@ -71,6 +71,7 @@ export function ImageGenerationTest() {
   };
 
   const quickPrompts = [
+    'A cute cat sitting in a garden',
     'A beautiful sunset over mountains',
     'A mystical forest with glowing fireflies',
     'A cyberpunk city with neon lights',

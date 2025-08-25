@@ -34,14 +34,10 @@ export class ImageService {
     try {
       console.log('Generating AI image for:', prompt);
       
-      // Try AI image generation first
-      try {
-        return await this.generateAIImage(prompt, settings);
-      } catch (aiError) {
-        console.warn('AI image generation failed, falling back to artistic representation:', aiError);
-        // Fallback to canvas-based artistic representation
-        return this.createArtisticImage(prompt, settings);
-      }
+      // For now, use canvas-based artistic representation as the primary method
+      // since Spark runtime doesn't support direct image generation
+      console.log('Creating canvas-based artistic representation');
+      return this.createArtisticImage(prompt, settings);
       
     } catch (error) {
       console.error('Error generating image:', error);
@@ -175,7 +171,8 @@ Return only the image data or URL, no additional text.`;
     
     // Analyze prompt for key visual elements
     const isNature = /nature|tree|forest|flower|mountain|ocean|sea|lake|sky|cloud|sunset|sunrise|landscape/.test(promptLower);
-    const isAnimal = /cat|dog|bird|fish|animal|lion|elephant|horse|rabbit/.test(promptLower);
+    const isAnimal = /cat|dog|bird|fish|animal|lion|elephant|horse|rabbit|pet|kitten|puppy/.test(promptLower);
+    const isCat = /cat|kitten|feline|kitty|meow/.test(promptLower);
     const isAbstract = /abstract|geometric|pattern|design|art|creative/.test(promptLower);
     const isSpace = /space|star|galaxy|planet|universe|cosmic|nebula/.test(promptLower);
     const isCity = /city|building|urban|street|architecture|skyline/.test(promptLower);
@@ -183,7 +180,9 @@ Return only the image data or URL, no additional text.`;
     const isOcean = /ocean|sea|water|wave|beach|coast/.test(promptLower);
     
     // Create sophisticated background based on theme
-    if (isSunset) {
+    if (isCat) {
+      this.createCatBackground(ctx, canvas);
+    } else if (isSunset) {
       this.createSunsetBackground(ctx, canvas);
     } else if (isOcean) {
       this.createOceanBackground(ctx, canvas);
@@ -193,8 +192,17 @@ Return only the image data or URL, no additional text.`;
       this.createNatureBackground(ctx, canvas);
     } else if (isCity) {
       this.createCityBackground(ctx, canvas);
+    } else if (isAnimal) {
+      this.createAnimalBackground(ctx, canvas);
     } else {
       this.createAbstractBackground(ctx, canvas, settings);
+    }
+
+    // Add subject-specific elements
+    if (isCat) {
+      this.addCatElements(ctx, canvas);
+    } else if (isAnimal) {
+      this.addAnimalElements(ctx, canvas, promptLower);
     }
 
     // Add style-specific elements
@@ -415,6 +423,275 @@ Return only the image data or URL, no additional text.`;
       ctx.beginPath();
       ctx.arc(x, canvas.height - treeHeight, treeWidth, 0, 2 * Math.PI);
       ctx.fill();
+    }
+  }
+
+  private createCatBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Cozy indoor/garden background perfect for cats
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#f0f4f8'); // Light blue-gray sky
+    gradient.addColorStop(0.3, '#dbeafe'); // Soft blue
+    gradient.addColorStop(0.7, '#a7f3d0'); // Light green
+    gradient.addColorStop(1, '#6ee7b7'); // Grass green
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add soft grass or floor texture
+    ctx.fillStyle = 'rgba(34, 139, 34, 0.3)';
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height * 0.7 + Math.random() * canvas.height * 0.3;
+      const width = Math.random() * 30 + 10;
+      const height = 5;
+      ctx.fillRect(x, y, width, height);
+    }
+  }
+
+  private createAnimalBackground(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Generic nature background suitable for animals
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB'); // Sky
+    gradient.addColorStop(0.4, '#98FB98'); // Light green
+    gradient.addColorStop(1, '#228B22'); // Forest green
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Add natural elements
+    this.addTrees(ctx, canvas);
+  }
+
+  private addCatElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Draw a stylized cat silhouette
+    ctx.fillStyle = 'rgba(75, 85, 99, 0.8)'; // Dark gray cat
+    
+    // Cat body (oval)
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 20, 40, 25, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Cat head (circle)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY - 15, 25, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Cat ears (triangles)
+    ctx.beginPath();
+    ctx.moveTo(centerX - 15, centerY - 30);
+    ctx.lineTo(centerX - 25, centerY - 45);
+    ctx.lineTo(centerX - 5, centerY - 35);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX + 15, centerY - 30);
+    ctx.lineTo(centerX + 25, centerY - 45);
+    ctx.lineTo(centerX + 5, centerY - 35);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Cat tail (curved)
+    ctx.strokeStyle = 'rgba(75, 85, 99, 0.8)';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(centerX + 35, centerY + 20);
+    ctx.quadraticCurveTo(centerX + 70, centerY - 10, centerX + 50, centerY - 40);
+    ctx.stroke();
+    
+    // Cat eyes (bright spots)
+    ctx.fillStyle = '#10b981'; // Green eyes
+    ctx.beginPath();
+    ctx.arc(centerX - 8, centerY - 18, 3, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(centerX + 8, centerY - 18, 3, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Add some decorative elements around the cat
+    this.addCatDecorations(ctx, canvas, centerX, centerY);
+  }
+
+  private addCatDecorations(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, catX: number, catY: number) {
+    // Add some yarn balls or toys around the cat
+    const colors = ['#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+    
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2;
+      const distance = 80 + Math.random() * 40;
+      const x = catX + Math.cos(angle) * distance;
+      const y = catY + Math.sin(angle) * distance;
+      
+      if (x > 10 && x < canvas.width - 10 && y > 10 && y < canvas.height - 10) {
+        // Yarn ball
+        ctx.fillStyle = colors[i];
+        ctx.beginPath();
+        ctx.arc(x, y, 8 + Math.random() * 5, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Yarn texture
+        ctx.strokeStyle = colors[i];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI);
+        ctx.stroke();
+      }
+    }
+    
+    // Add some paw prints
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    for (let i = 0; i < 6; i++) {
+      const x = Math.random() * canvas.width;
+      const y = canvas.height * 0.8 + Math.random() * canvas.height * 0.2;
+      
+      // Paw pad
+      ctx.beginPath();
+      ctx.ellipse(x, y, 4, 6, 0, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Toes
+      for (let j = 0; j < 4; j++) {
+        const toeX = x + (j - 1.5) * 4;
+        const toeY = y - 8;
+        ctx.beginPath();
+        ctx.arc(toeX, toeY, 2, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  }
+
+  private addAnimalElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, prompt: string) {
+    // Add generic animal-friendly elements based on the prompt
+    if (prompt.includes('dog') || prompt.includes('puppy')) {
+      this.addDogElements(ctx, canvas);
+    } else if (prompt.includes('bird')) {
+      this.addBirdElements(ctx, canvas);
+    } else {
+      // Generic animal silhouette
+      this.addGenericAnimalSilhouette(ctx, canvas);
+    }
+  }
+
+  private addDogElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.fillStyle = 'rgba(139, 69, 19, 0.8)'; // Brown dog
+    
+    // Dog body
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 10, 50, 30, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Dog head
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY - 25, 30, 25, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Dog ears (floppy)
+    ctx.beginPath();
+    ctx.ellipse(centerX - 20, centerY - 35, 8, 15, -0.3, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.ellipse(centerX + 20, centerY - 35, 8, 15, 0.3, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Dog tail (wagging)
+    ctx.strokeStyle = 'rgba(139, 69, 19, 0.8)';
+    ctx.lineWidth = 10;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(centerX + 45, centerY + 5);
+    ctx.quadraticCurveTo(centerX + 70, centerY - 20, centerX + 80, centerY + 10);
+    ctx.stroke();
+  }
+
+  private addBirdElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.8)'; // Blue bird
+    
+    // Bird body
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, 25, 35, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Bird head
+    ctx.beginPath();
+    ctx.arc(centerX, centerY - 25, 18, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Bird wings
+    ctx.beginPath();
+    ctx.ellipse(centerX - 20, centerY, 15, 25, -0.5, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.ellipse(centerX + 20, centerY, 15, 25, 0.5, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Bird beak
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - 25);
+    ctx.lineTo(centerX + 12, centerY - 22);
+    ctx.lineTo(centerX, centerY - 18);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Add some clouds or sky elements
+    this.addSkyElements(ctx, canvas);
+  }
+
+  private addGenericAnimalSilhouette(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    ctx.fillStyle = 'rgba(107, 114, 128, 0.7)'; // Gray silhouette
+    
+    // Generic four-legged animal shape
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, 40, 25, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Head
+    ctx.beginPath();
+    ctx.arc(centerX - 35, centerY - 10, 20, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Legs
+    for (let i = 0; i < 4; i++) {
+      const legX = centerX - 20 + (i % 2) * 40;
+      const legY = centerY + 15;
+      ctx.fillRect(legX - 3, legY, 6, 20);
+    }
+  }
+
+  private addSkyElements(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    // Add fluffy clouds
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    
+    for (let i = 0; i < 3; i++) {
+      const cloudX = (canvas.width / 4) * (i + 1);
+      const cloudY = canvas.height * 0.2 + Math.random() * canvas.height * 0.2;
+      
+      // Cloud made of circles
+      for (let j = 0; j < 5; j++) {
+        const x = cloudX + (j - 2) * 15 + Math.random() * 10;
+        const y = cloudY + Math.random() * 10;
+        const radius = 12 + Math.random() * 8;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
   }
 
