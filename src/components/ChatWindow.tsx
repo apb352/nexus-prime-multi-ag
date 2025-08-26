@@ -52,7 +52,10 @@ export function ChatWindow({
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState<string>('');
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 });
   const [zIndex, setZIndex] = useState(1500);
   const [internetEnabled, setInternetEnabled] = useState(agent.internetSettings?.enabled ?? false);
   const [autoSearch, setAutoSearch] = useState(agent.internetSettings?.autoSearch ?? false);
@@ -876,6 +879,17 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     }
   };
 
+  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setInitialSize({ width: window.size.width, height: window.size.height });
+    setInitialPosition({ x: window.position.x, y: window.position.y });
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
@@ -885,15 +899,37 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
         });
       }
       
-      if (isResizing) {
-        const rect = windowRef.current?.getBoundingClientRect();
-        if (rect) {
-          const newWidth = Math.max(300, e.clientX - window.position.x);
-          const newHeight = Math.max(400, e.clientY - window.position.y);
-          onUpdateSize(window.id, {
-            width: newWidth,
-            height: newHeight
-          });
+      if (isResizing && resizeDirection) {
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+        
+        let newWidth = initialSize.width;
+        let newHeight = initialSize.height;
+        let newX = initialPosition.x;
+        let newY = initialPosition.y;
+
+        // Handle horizontal resizing
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(300, initialSize.width + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          newWidth = Math.max(300, initialSize.width - deltaX);
+          newX = initialPosition.x + (initialSize.width - newWidth);
+        }
+
+        // Handle vertical resizing
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(400, initialSize.height + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          newHeight = Math.max(400, initialSize.height - deltaY);
+          newY = initialPosition.y + (initialSize.height - newHeight);
+        }
+
+        // Update size and position
+        onUpdateSize(window.id, { width: newWidth, height: newHeight });
+        if (newX !== initialPosition.x || newY !== initialPosition.y) {
+          onUpdatePosition(window.id, { x: newX, y: newY });
         }
       }
     };
@@ -901,6 +937,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     const handleMouseUp = () => {
       setIsDragging(false);
       setIsResizing(false);
+      setResizeDirection('');
     };
 
     // Only add event listeners in browser environment
@@ -915,7 +952,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
         document.removeEventListener('mouseup', handleMouseUp);
       }
     };
-  }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
+  }, [isDragging, isResizing, resizeDirection, dragStart, initialSize, initialPosition, window.id, onUpdatePosition, onUpdateSize]);
 
   // Add debugging for agent voice settings updates
   useEffect(() => {
@@ -1373,14 +1410,54 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
         </div>
       </div>
 
-      {/* Resize handle */}
+      {/* Resize handles - Edges */}
+      {/* Top edge */}
+      <div
+        className="absolute top-0 left-2 right-2 h-1 cursor-n-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeStart(e, 'n')}
+      />
+      
+      {/* Bottom edge */}
+      <div
+        className="absolute bottom-0 left-2 right-2 h-1 cursor-s-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeStart(e, 's')}
+      />
+      
+      {/* Left edge */}
+      <div
+        className="absolute left-0 top-2 bottom-2 w-1 cursor-w-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeStart(e, 'w')}
+      />
+      
+      {/* Right edge */}
+      <div
+        className="absolute right-0 top-2 bottom-2 w-1 cursor-e-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeStart(e, 'e')}
+      />
+      
+      {/* Resize handles - Corners */}
+      {/* Top-left corner */}
+      <div
+        className="absolute top-0 left-0 w-2 h-2 cursor-nw-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
+        onMouseDown={(e) => handleResizeStart(e, 'nw')}
+      />
+      
+      {/* Top-right corner */}
+      <div
+        className="absolute top-0 right-0 w-2 h-2 cursor-ne-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
+        onMouseDown={(e) => handleResizeStart(e, 'ne')}
+      />
+      
+      {/* Bottom-left corner */}
+      <div
+        className="absolute bottom-0 left-0 w-2 h-2 cursor-sw-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
+        onMouseDown={(e) => handleResizeStart(e, 'sw')}
+      />
+      
+      {/* Bottom-right corner with visible handle */}
       <div
         className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setIsResizing(true);
-        }}
+        onMouseDown={(e) => handleResizeStart(e, 'se')}
       >
         <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
         <div className="absolute bottom-2 right-2 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/30" />
