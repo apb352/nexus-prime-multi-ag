@@ -72,6 +72,11 @@ export function ChatWindow({
     style: string;
   }>>([]);
   
+  // Keep current image settings in local state to avoid timing issues
+  const [currentImageSettings, setCurrentImageSettings] = useState<ImageSettings>(
+    agent.imageSettings || defaultImageSettings
+  );
+  
   // Update internet settings when agent changes
   useEffect(() => {
     setInternetEnabled(agent.internetSettings?.enabled ?? false);
@@ -290,11 +295,6 @@ What would you like to talk about today?`;
       abortControllerRef.current = null;
     }
   };
-
-  // Keep current settings in local state to avoid timing issues
-  const [currentImageSettings, setCurrentImageSettings] = useState<ImageSettings>(
-    agent.imageSettings || defaultImageSettings
-  );
 
   // Update local state when agent settings change
   useEffect(() => {
