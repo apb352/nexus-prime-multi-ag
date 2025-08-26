@@ -5,6 +5,7 @@ import { ChatMessage } from '@/lib/types';
 export function ChatHistoryTest() {
   const [chatHistory, setChatHistory] = useKV<Record<string, ChatMessage[]>>('nexus-chat-history', {});
   const [storageKeys, setStorageKeys] = useState<string[]>([]);
+  const [forceRefresh, setForceRefresh] = useState(0);
 
   useEffect(() => {
     console.log('=== CHAT HISTORY TEST ===');
@@ -28,8 +29,6 @@ export function ChatHistoryTest() {
     
     checkStorage();
   }, [chatHistory, forceRefresh]);
-
-  const [forceRefresh, setForceRefresh] = useState(0);
 
   const clearAllHistory = async () => {
     try {
