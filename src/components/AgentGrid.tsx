@@ -1,5 +1,6 @@
 import { useAgents } from '@/hooks/use-agents';
 import { AgentCard } from './AgentCard';
+import { ChatSearch } from './ChatSearch';
 import { AIAgent } from '@/lib/types';
 
 interface AgentGridProps {
@@ -19,9 +20,14 @@ export function AgentGrid({ onAgentSelect }: AgentGridProps) {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
           Nexus Prime
         </h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-xl text-muted-foreground mb-6">
           Choose an AI agent to begin your conversation
         </p>
+        
+        {/* Search section */}
+        <div className="flex justify-center">
+          <ChatSearch />
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

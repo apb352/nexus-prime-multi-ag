@@ -16,6 +16,7 @@ import { CanvasDrawing } from './CanvasDrawing';
 import { ImageViewer } from './ImageViewer';
 import { SpeakingOverlay } from './SpeakingOverlay';
 import { VoiceVisualization } from './VoiceVisualization';
+import { ChatWindowSearch } from './ChatWindowSearch';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { discordService } from '@/lib/discord-service';
 import { ImageService, ImageSettings, defaultImageSettings } from '@/lib/image-service';
@@ -84,6 +85,27 @@ export function ChatWindow({
   const { addMessage, getAgentHistory } = useChatHistory();
   const { updateAgent } = useAgents();
   const messages = getAgentHistory(agent.id);
+
+  // Handle message selection from search
+  const handleMessageSelect = (messageIndex: number) => {
+    if (!messagesRef.current) return;
+    
+    const messageElements = messagesRef.current.querySelectorAll('[data-message-index]');
+    const targetElement = messageElements[messageIndex] as HTMLElement;
+    
+    if (targetElement) {
+      // Scroll to the message
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight the message briefly
+      targetElement.style.backgroundColor = 'var(--accent)';
+      targetElement.style.transition = 'background-color 0.3s ease';
+      
+      setTimeout(() => {
+        targetElement.style.backgroundColor = '';
+      }, 2000);
+    }
+  };
 
   // Add welcome message for new chats to introduce image generation
   useEffect(() => {
@@ -1085,6 +1107,11 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             {isTestMode ? 'Testing...' : 'Test'}
           </Button>
           
+          <ChatWindowSearch
+            messages={messages}
+            onMessageSelect={handleMessageSelect}
+          />
+          
           <Button
             variant="ghost"
             size="sm"
@@ -1109,9 +1136,10 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
         className="flex-1 p-4 space-y-4 overflow-y-auto"
         style={{ height: 'calc(100% - 140px)' }}
       >
-        {messages.map((msg) => (
+        {messages.map((msg, index) => (
           <div
             key={msg.id}
+            data-message-index={index}
             className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div

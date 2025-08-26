@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { AgentGrid } from '@/components/AgentGrid';
 import { ChatWindow } from '@/components/ChatWindow';
@@ -6,6 +6,7 @@ import { ThemeSelector } from '@/components/ThemeSelector';
 import { DebugPanel } from '@/components/DebugPanel';
 import { EmergencyStop } from '@/components/EmergencyStop';
 import { DiscordStatus } from '@/components/DiscordStatus';
+import { ChatSearch } from '@/components/ChatSearch';
 import { TestFixes } from '@/test-fixes';
 import { EmergencyStopTest } from '@/components/EmergencyStopTest';
 import { ImageGenerationTest } from '@/components/ImageGenerationTest';
