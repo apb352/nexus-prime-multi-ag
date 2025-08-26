@@ -100,7 +100,7 @@ export async function createEnhancedChatPrompt(
   // Add image generation capability context if enabled
   let imageContext = '';
   if (imageEnabled) {
-    imageContext = '\n\n🎨 IMPORTANT: This AI assistant has full image generation capabilities enabled. When users ask to create, draw, generate, or visualize images, the system will automatically handle image generation. The AI should encourage and support image creation requests.';
+    imageContext = '\n\n🎨 IMPORTANT: This AI assistant has artistic visualization capabilities enabled. When users ask to create, draw, generate, or visualize images, the system will create beautiful artistic representations using advanced canvas algorithms. Note that these are sophisticated artistic renderings rather than traditional AI-generated images, due to environment limitations.';
   }
   
   if (hasInternetContext) {
@@ -186,4 +186,65 @@ export function validateAIResponse(response: any): string {
   }
   
   return response;
+}
+
+/**
+ * Get standardized explanations for system capabilities and limitations
+ */
+export function getCapabilityExplanation(type: 'internet' | 'images' | 'both'): string {
+  const explanations = {
+    internet: `🌐 **Internet Access Information:**
+
+I'm currently working with simulated internet data rather than real-time web access due to environment limitations. Here's what this means:
+
+**✅ What I Can Do:**
+- Provide intelligent mock search results based on your queries
+- Generate contextually relevant information for common topics  
+- Give weather simulations for locations
+- Offer current time and date information
+- Search patterns and topic analysis
+
+**⚠️ Current Limitations:**
+- No real-time web browsing or live data feeds
+- Information is generated based on patterns rather than current sources
+- Weather data is simulated rather than live
+- Search results are educational examples
+
+**💡 Tip:** I'll still do my best to help with information requests using my knowledge and intelligent mock responses!`,
+
+    images: `🎨 **Artistic Visualization Information:**
+
+I create beautiful visual artwork using advanced canvas algorithms rather than traditional AI image generation due to environment limitations.
+
+**✅ What I Can Create:**
+- Sophisticated artistic representations in multiple styles
+- Canvas-based visualizations for your prompts
+- Custom artwork with style controls (realistic, artistic, cyberpunk, etc.)
+- Interactive drawing canvas for collaborative creation
+- High-quality rendered output in various formats
+
+**🎯 Available Styles:**
+- **Realistic:** Photographic and lifelike representations
+- **Artistic:** Painterly and creative compositions  
+- **Cartoon:** Colorful animated style
+- **Cyberpunk:** Neon and futuristic aesthetics
+- **Minimalist:** Clean and simple designs
+
+**💡 How to Use:** Just ask me to "draw," "create," or "visualize" something, and I'll generate beautiful artwork for you!`,
+
+    both: `🔧 **System Capabilities Overview:**
+
+**🌐 Internet Access:** Working with simulated data
+- Intelligent mock responses for searches and information requests
+- No real-time web access due to environment limitations
+
+**🎨 Artistic Visualization:** Advanced canvas-based creation
+- Beautiful artwork generation using sophisticated algorithms  
+- Multiple artistic styles and quality settings available
+- No traditional AI image generation due to environment limitations
+
+**✨ Bottom Line:** While I have some technical limitations, I'm still here to help you with information, creativity, and engaging conversation! The simulated responses and artistic visualizations I provide are still thoughtful and useful.`
+  };
+
+  return explanations[type];
 }

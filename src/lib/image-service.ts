@@ -32,58 +32,24 @@ export class ImageService {
     }
 
     try {
-      console.log('Generating AI image for:', prompt);
+      console.log('Generating artistic representation for:', prompt);
       
-      // For now, use canvas-based artistic representation as the primary method
-      // since Spark runtime doesn't support direct image generation
-      console.log('Creating canvas-based artistic representation');
+      // Note: This creates canvas-based artistic representations rather than true AI-generated images
+      // The Spark runtime environment doesn't currently support external image generation APIs
+      console.log('Creating canvas-based artistic representation using advanced algorithms');
       return this.createArtisticImage(prompt, settings);
       
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error generating artistic representation:', error);
       throw error;
     }
   }
 
   private async generateAIImage(prompt: string, settings: ImageSettings): Promise<string> {
-    // Check if we have access to the spark API
-    if (typeof window === 'undefined' || !window.spark) {
-      throw new Error('Spark API not available');
-    }
-
-    // Enhance the prompt with style and quality modifiers
-    const enhancedPrompt = this.enhancePrompt(prompt, settings);
+    // Note: The Spark runtime environment doesn't currently support image generation APIs
+    // This method exists for future compatibility when image generation becomes available
     
-    console.log('Requesting AI image generation with prompt:', enhancedPrompt);
-
-    // Create the prompt using spark.llmPrompt
-    const imagePrompt = window.spark.llmPrompt`Generate a high-quality image based on this description: ${enhancedPrompt}
-
-Please create a detailed, visually appealing image that captures the essence of "${prompt}" with the following specifications:
-- Style: ${settings.imageStyle}
-- Quality: ${settings.quality}
-- Resolution: High definition
-- Composition: Well-balanced and aesthetically pleasing
-
-Return only the image data or URL, no additional text.`;
-
-    try {
-      // Use the spark LLM with image generation capabilities
-      // Note: This assumes the Spark runtime supports image generation
-      const response = await window.spark.llm(imagePrompt, 'gpt-4o', false);
-      
-      // If the response contains image data or URL, return it
-      if (response && (response.startsWith('data:image/') || response.startsWith('http'))) {
-        return response;
-      }
-      
-      // If no direct image was returned, fall back to creating description-based art
-      throw new Error('AI did not return image data');
-      
-    } catch (error) {
-      console.error('Spark LLM image generation failed:', error);
-      throw new Error('AI image generation not supported by current model');
-    }
+    throw new Error('Direct AI image generation is not available in the current environment. The system creates artistic canvas representations instead.');
   }
 
   private enhancePrompt(prompt: string, settings: ImageSettings): string {
@@ -1005,7 +971,7 @@ Return only the image data or URL, no additional text.`;
     // Add generation info
     ctx.font = `${Math.max(10, canvas.width / 40)}px Arial`;
     ctx.fillStyle = settings.imageStyle === 'minimalist' ? '#6b7280' : '#cbd5e1';
-    ctx.fillText(`✨ AI Generated • ${settings.imageStyle} style`, canvas.width / 2, canvas.height - 20);
+    ctx.fillText(`🎨 Artistic Representation • ${settings.imageStyle} style`, canvas.width / 2, canvas.height - 20);
     
     // Reset shadow
     ctx.shadowColor = 'transparent';

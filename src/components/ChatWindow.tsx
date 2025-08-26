@@ -21,7 +21,7 @@ import { ChatWindowSearch } from './ChatWindowSearch';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { discordService } from '@/lib/discord-service';
 import { ImageService, ImageSettings, defaultImageSettings } from '@/lib/image-service';
-import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage } from '@/lib/chat-utils';
+import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage, getCapabilityExplanation } from '@/lib/chat-utils';
 import { windowManager } from '@/lib/window-manager';
 import { toast } from 'sonner';
 
@@ -123,15 +123,17 @@ export function ChatWindow({
       const welcomeMessage = currentImageSettings?.enabled 
         ? `Hello! I'm ${agent.name}. I'm ready to chat with you!
 
-🎨 **Image Generation Available!** 
-I can create artistic visualizations for you. Just ask me to "draw something" or "create an image of..." and I'll generate creative artwork using the style settings in the image controls above (📷 icon).
+🎨 **Artistic Visualization Available!** 
+I can create artistic representations for you using canvas-based algorithms. Just ask me to "draw something" or "create an image of..." and I'll generate visual artwork using the style settings in the image controls above (📷 icon).
 
-You can also customize the art style (realistic, cyberpunk, artistic, etc.) and quality settings in the image controls menu.
+**Note:** I create artistic visualizations using advanced canvas rendering rather than traditional AI image generation, which isn't available in this environment.
+
+You can customize the art style (realistic, cyberpunk, artistic, etc.) and quality settings in the image controls menu.
 
 What would you like to talk about or create today?`
         : `Hello! I'm ${agent.name}. I'm ready to chat with you!
 
-💡 **Tip:** You can enable image generation in this chat window by clicking the image icon (📷) in the controls above. Once enabled, I can create artistic visualizations for you!
+💡 **Tip:** You can enable artistic visualization in this chat window by clicking the image icon (📷) in the controls above. Once enabled, I can create visual artwork for you!
 
 What would you like to talk about today?`;
 
@@ -497,9 +499,9 @@ Would you like me to try generating a simpler version, or would you prefer to us
       } else if (isImageRequest) {
         // User wants image generation but it's disabled
         addMessage(agent.id, {
-          content: `🎨 I'd love to help you create images! Let me guide you through enabling image generation:
+          content: `🎨 I'd love to help you create visual artwork! Let me guide you through enabling artistic visualization:
 
-**🔧 To Enable Image Generation:**
+**🔧 To Enable Artistic Visualization:**
 1. Click the **image icon (📷)** in the window controls above
 2. Toggle **"Image Generation"** to **ON**
 3. Choose your preferred **style** (realistic, artistic, cartoon, cyberpunk, minimalist)
@@ -507,12 +509,47 @@ Would you like me to try generating a simpler version, or would you prefer to us
 5. Then ask me again to "draw" or "create an image"
 
 **✨ What You'll Get:**
-- AI-powered image generation (when available)
-- High-quality artistic canvas rendering (fallback)
+- Advanced canvas-based artistic rendering
+- High-quality visual representations
 - Interactive canvas for custom drawings
 - Multiple styles and quality settings
 
+**📝 Technical Note:** I create artistic visualizations using sophisticated canvas algorithms rather than external AI image services, which aren't available in this environment. The results are still beautiful and creative!
+
 Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical forest"* once enabled!`,
+          sender: 'ai',
+          agentId: agent.id
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user is asking about capabilities/limitations
+      const capabilityQuestions = [
+        'can you use the internet', 'do you have internet', 'internet access',
+        'can you browse', 'search the web', 'access websites', 'real time',
+        'can you generate images', 'can you create pictures', 'image generation',
+        'can you draw', 'make images', 'create visuals', 'ai images',
+        'what can you do', 'your capabilities', 'your limitations',
+        'how do you work', 'what are your features'
+      ];
+      
+      const isCapabilityQuestion = capabilityQuestions.some(keyword => 
+        userMessage.toLowerCase().includes(keyword)
+      );
+      
+      if (isCapabilityQuestion) {
+        const lowerMessage = userMessage.toLowerCase();
+        let explanationType: 'internet' | 'images' | 'both' = 'both';
+        
+        if (lowerMessage.includes('internet') || lowerMessage.includes('web') || lowerMessage.includes('browse')) {
+          explanationType = 'internet';
+        } else if (lowerMessage.includes('image') || lowerMessage.includes('draw') || lowerMessage.includes('picture') || lowerMessage.includes('visual')) {
+          explanationType = 'images';
+        }
+        
+        addMessage(agent.id, {
+          content: getCapabilityExplanation(explanationType),
           sender: 'ai',
           agentId: agent.id
         });
