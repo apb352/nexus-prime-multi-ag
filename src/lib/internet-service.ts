@@ -15,7 +15,7 @@ export interface WebContent {
   url: string;
   title: string;
   content: string;
-  timestamp: Date;
+  timestamp: number;
 }
 
 export interface InternetSettings {
@@ -371,7 +371,7 @@ class InternetService {
       url,
       title: `Content from ${domain}`,
       content: `This is the fetched content from ${url}. In a real implementation, this would contain the actual parsed content from the webpage, including text, headings, and other relevant information extracted from the HTML. *Note: This is simulated content. Real URL fetching is temporarily unavailable due to network restrictions.*`,
-      timestamp: new Date()
+      timestamp: Date.now()
     };
   }
 

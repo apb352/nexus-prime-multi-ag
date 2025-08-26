@@ -67,7 +67,7 @@ export function ChatWindow({
     id: string;
     url: string;
     prompt: string;
-    timestamp: Date;
+    timestamp: number;
     style: string;
   }>>([]);
   
@@ -340,7 +340,7 @@ What would you like to talk about today?`;
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           url: imageUrl,
           prompt,
-          timestamp: new Date(),
+          timestamp: Date.now(),
           style: settingsToUse.imageStyle
         };
         
@@ -391,7 +391,7 @@ Would you like me to try generating a simpler version, or would you prefer to us
       id: `canvas-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       url: imageUrl,
       prompt: 'Canvas drawing',
-      timestamp: new Date(),
+      timestamp: Date.now(),
       style: 'hand-drawn'
     };
     

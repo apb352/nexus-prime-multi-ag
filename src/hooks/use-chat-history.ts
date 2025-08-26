@@ -8,7 +8,7 @@ export function useChatHistory() {
     const newMessage: ChatMessage = {
       ...message,
       id: Date.now().toString(),
-      timestamp: new Date()
+      timestamp: Date.now()
     };
 
     setChatHistory((currentHistory) => ({
