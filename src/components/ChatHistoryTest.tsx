@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
+import { useKV } from '@github/spark/hooks';
 import { ChatMessage } from '@/lib/types';
-export function ChatHistoryTest() {
 
 export function ChatHistoryTest() {
   const [chatHistory, setChatHistory] = useKV<Record<string, ChatMessage[]>>('nexus-chat-history', {});
@@ -8,28 +8,7 @@ export function ChatHistoryTest() {
   useEffect(() => {
     console.log('=== CHAT HISTORY TEST ===');
     console.log('Current chat history from KV storage:', chatHistory);
-    };
-    
-      const updated = {
-        [testAgentId]: [...(current[t
-      console.log('Adding test message
-    });
-
-    <div className="f
-      <div className="space
-        {Object.entries(cha
-    };
-
-    </div>
-}
-      const updated = {
-
-
-
-
-
-    });
-
+  }, [chatHistory]);
 
   return (
     <div className="fixed bottom-20 left-4 bg-card p-4 rounded border text-xs max-w-sm z-50">
