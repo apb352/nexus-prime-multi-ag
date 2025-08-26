@@ -15,7 +15,7 @@ interface GeneratedImage {
   id: string;
   url: string;
   prompt: string;
-  timestamp: Date;
+  timestamp: number; // Unix timestamp in milliseconds
   style: string;
 }
 
@@ -99,7 +99,7 @@ export function ImageViewer({ images, onRemoveImage, className = '' }: ImageView
                   {image.style}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {image.timestamp.toLocaleTimeString()}
+                  {new Date(image.timestamp).toLocaleTimeString()}
                 </span>
               </div>
             </div>
@@ -159,7 +159,7 @@ export function ImageViewer({ images, onRemoveImage, className = '' }: ImageView
                 <div>
                   <span className="font-medium">Created:</span>
                   <span className="ml-2 text-muted-foreground">
-                    {selectedImage.timestamp.toLocaleString()}
+                    {new Date(selectedImage.timestamp).toLocaleString()}
                   </span>
                 </div>
               </div>
