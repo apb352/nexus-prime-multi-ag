@@ -155,6 +155,7 @@ export function VoiceControls({
         size="sm"
         onClick={() => handleEnabledChange(!currentVoiceSettings.enabled)}
         className={`p-2 ${currentVoiceSettings.enabled ? 'text-primary' : 'text-muted-foreground'}`}
+        title={currentVoiceSettings.enabled ? "Disable voice synthesis" : "Enable voice synthesis"}
       >
         {currentVoiceSettings.enabled ? <SpeakerHigh size={16} /> : <SpeakerX size={16} />}
       </Button>
@@ -168,6 +169,7 @@ export function VoiceControls({
             onClick={handleSpeak}
             disabled={isSpeaking}
             className="p-2"
+            title={isSpeaking ? "Stop voice playback" : "Test voice with sample text"}
           >
             {isSpeaking ? <Stop size={16} /> : <Play size={16} />}
           </Button>
@@ -195,6 +197,7 @@ export function VoiceControls({
               variant="ghost" 
               size="sm" 
               className={`p-2 ${currentVoiceSettings.enabled ? 'text-primary hover:text-primary' : 'text-muted-foreground'}`}
+              title="Voice settings and configuration"
             >
               <Gear size={16} />
             </Button>

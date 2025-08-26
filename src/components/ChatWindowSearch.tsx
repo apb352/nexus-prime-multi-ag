@@ -79,7 +79,7 @@ export function ChatWindowSearch({ messages, onMessageSelect }: ChatWindowSearch
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Search in this chat conversation">
           <Search size={14} />
         </Button>
       </PopoverTrigger>

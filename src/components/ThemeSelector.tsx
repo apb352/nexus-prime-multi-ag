@@ -26,6 +26,7 @@ export function ThemeSelector() {
             variant="outline"
             size="sm"
             className="bg-card/80 backdrop-blur-sm border-border"
+            title="Discord bot configuration and setup"
           >
             <DiscordLogo size={16} className="mr-2" />
             Discord
@@ -42,7 +43,7 @@ export function ThemeSelector() {
       
       {/* Theme Selector */}
       <Select value={theme} onValueChange={(value: Theme) => setTheme(value)}>
-        <SelectTrigger className="w-40 bg-card/80 backdrop-blur-sm border-border">
+        <SelectTrigger className="w-40 bg-card/80 backdrop-blur-sm border-border" title="Change visual theme">
           <div className="flex items-center space-x-2">
             <Palette size={16} />
             <SelectValue />

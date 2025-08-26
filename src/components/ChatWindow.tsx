@@ -1157,6 +1157,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             variant="ghost"
             size="sm"
             onClick={() => onMinimize(window.id)}
+            title="Minimize window"
           >
             <Minus size={16} />
           </Button>
@@ -1165,6 +1166,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             variant="ghost"
             size="sm"
             onClick={() => onClose(window.id)}
+            title="Close window"
           >
             <X size={16} />
           </Button>
@@ -1341,6 +1343,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             disabled={!message || !message.trim() || isLoading}
             size="sm"
             style={{ backgroundColor: agent.color }}
+            title="Send message (Enter to send, Shift+Enter for new line)"
           >
             <Send size={16} />
           </Button>

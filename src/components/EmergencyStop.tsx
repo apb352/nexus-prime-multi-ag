@@ -28,6 +28,7 @@ export function EmergencyStop({ onStopAll, onStopWindow, activeWindows }: Emerge
           size="sm"
           className="fixed top-28 right-4 z-[10001] shadow-lg bg-red-600 hover:bg-red-700"
           disabled={!hasActiveWindows}
+          title="Emergency stop all AI operations"
         >
           <StopCircle size={16} className="mr-1" />
           Emergency Stop
