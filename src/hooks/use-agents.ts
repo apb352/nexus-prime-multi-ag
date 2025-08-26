@@ -203,11 +203,15 @@ export function useAgents() {
   };
 
   const updateAgent = (updatedAgent: AIAgent) => {
-    setAgents((currentAgents) =>
-      currentAgents.map(agent =>
-        agent.id === updatedAgent.id ? updatedAgent : agent
-      )
-    );
+    console.log('useAgents updateAgent called with:', updatedAgent);
+    setAgents((currentAgents) => {
+      console.log('Current agents before update:', currentAgents);
+      const newAgents = currentAgents.map(agent =>
+        agent.id === updatedAgent.id ? { ...updatedAgent } : agent
+      );
+      console.log('New agents after update:', newAgents);
+      return newAgents;
+    });
   };
 
   const getAgent = (agentId: string): AIAgent | undefined => {

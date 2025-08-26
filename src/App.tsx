@@ -8,6 +8,8 @@ import { EmergencyStop } from '@/components/EmergencyStop';
 import { DiscordStatus } from '@/components/DiscordStatus';
 import { SimpleTestComponent } from '@/components/SimpleTestComponent';
 import { ChatHistoryTest } from '@/components/ChatHistoryTest';
+import { VoiceSettingsTest } from '@/components/VoiceSettingsTest';
+import { VoiceSettingsDebug } from '@/components/VoiceSettingsDebug';
 import { useAgents } from '@/hooks/use-agents';
 import { windowManager } from '@/lib/window-manager';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
@@ -192,6 +194,9 @@ function App() {
           <ChatHistoryTest />
         </div>
       )}
+      
+      {/* Voice settings debug - only in development */}
+      {import.meta.env.DEV && <VoiceSettingsDebug />}
       
       {/* Debug Panel */}
       {showDebug && <DebugPanel />}

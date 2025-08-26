@@ -917,28 +917,34 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     };
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
 
+  // Add debugging for agent voice settings updates
+  useEffect(() => {
+    console.log('ChatWindow: Agent voice settings changed:', agent.voiceSettings);
+  }, [agent.voiceSettings]);
+
   const handleVoiceSettingsChange = (newVoiceSettings: VoiceSettings) => {
     console.log('ChatWindow handleVoiceSettingsChange called with:', newVoiceSettings);
+    console.log('Current agent:', agent);
     
-    // Create a completely new agent object to ensure React detects the change
-    const updatedAgent: AIAgent = {
-      id: agent.id,
-      name: agent.name,
-      mood: agent.mood,
-      avatar: agent.avatar,
-      personality: agent.personality,
-      color: agent.color,
-      isActive: agent.isActive,
-      voiceSettings: newVoiceSettings,
-      internetSettings: agent.internetSettings,
-      imageSettings: agent.imageSettings
-    };
-    
-    console.log('Calling updateAgent with:', updatedAgent);
-    updateAgent(updatedAgent);
-    
-    // Show a toast to confirm the change
-    toast.success(`Voice settings updated for ${agent.name}`);
+    try {
+      // Create a completely new agent object to ensure React detects the change
+      const updatedAgent: AIAgent = {
+        ...agent,
+        voiceSettings: { ...newVoiceSettings }
+      };
+      
+      console.log('Calling updateAgent with:', updatedAgent);
+      updateAgent(updatedAgent);
+      
+      // Show a toast to confirm the change
+      toast.success(`Voice settings updated for ${agent.name}`, {
+        description: `Enabled: ${newVoiceSettings.enabled}, Auto-speak: ${newVoiceSettings.autoSpeak}`
+      });
+      
+    } catch (error) {
+      console.error('Error updating voice settings:', error);
+      toast.error('Failed to update voice settings');
+    }
   };
 
   const handleSpeakMessage = async (text: string) => {
@@ -1109,6 +1115,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
           </Select>
           
           <VoiceControls
+            key={`voice-${agent.id}-${JSON.stringify(agent.voiceSettings)}`}
             voiceSettings={agent.voiceSettings}
             onVoiceSettingsChange={handleVoiceSettingsChange}
             onSpeak={handleSpeakMessage}
