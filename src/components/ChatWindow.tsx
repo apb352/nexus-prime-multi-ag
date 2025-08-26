@@ -918,11 +918,27 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
   }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
 
   const handleVoiceSettingsChange = (newVoiceSettings: VoiceSettings) => {
-    const updatedAgent = {
-      ...agent,
-      voiceSettings: newVoiceSettings
+    console.log('ChatWindow handleVoiceSettingsChange called with:', newVoiceSettings);
+    
+    // Create a completely new agent object to ensure React detects the change
+    const updatedAgent: AIAgent = {
+      id: agent.id,
+      name: agent.name,
+      mood: agent.mood,
+      avatar: agent.avatar,
+      personality: agent.personality,
+      color: agent.color,
+      isActive: agent.isActive,
+      voiceSettings: newVoiceSettings,
+      internetSettings: agent.internetSettings,
+      imageSettings: agent.imageSettings
     };
+    
+    console.log('Calling updateAgent with:', updatedAgent);
     updateAgent(updatedAgent);
+    
+    // Show a toast to confirm the change
+    toast.success(`Voice settings updated for ${agent.name}`);
   };
 
   const handleSpeakMessage = async (text: string) => {

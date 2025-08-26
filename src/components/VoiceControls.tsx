@@ -57,24 +57,29 @@ export function VoiceControls({
   }, []);
 
   const handleEnabledChange = (enabled: boolean) => {
+    console.log('handleEnabledChange called with:', enabled);
     const newSettings = {
       enabled,
       autoSpeak: voiceSettings?.autoSpeak ?? false,
       profile: voiceSettings?.profile ?? VOICE_PROFILES.analytical
     };
+    console.log('Calling onVoiceSettingsChange with:', newSettings);
     onVoiceSettingsChange(newSettings);
   };
 
   const handleAutoSpeakChange = (autoSpeak: boolean) => {
+    console.log('handleAutoSpeakChange called with:', autoSpeak);
     const newSettings = {
       enabled: voiceSettings?.enabled ?? false,
       autoSpeak,
       profile: voiceSettings?.profile ?? VOICE_PROFILES.analytical
     };
+    console.log('Calling onVoiceSettingsChange with:', newSettings);
     onVoiceSettingsChange(newSettings);
   };
 
   const handleProfileChange = (profileKey: string) => {
+    console.log('handleProfileChange called with:', profileKey);
     const profile = VOICE_PROFILES[profileKey];
     if (profile) {
       const newSettings = {
@@ -82,11 +87,13 @@ export function VoiceControls({
         autoSpeak: voiceSettings?.autoSpeak ?? false,
         profile
       };
+      console.log('Calling onVoiceSettingsChange with:', newSettings);
       onVoiceSettingsChange(newSettings);
     }
   };
 
   const handleProfileSettingChange = (key: keyof VoiceProfile, value: number | string) => {
+    console.log('handleProfileSettingChange called with:', key, value);
     if (!voiceSettings?.profile) return;
     const newSettings = {
       enabled: voiceSettings.enabled ?? false,
@@ -96,6 +103,7 @@ export function VoiceControls({
         [key]: value
       }
     };
+    console.log('Calling onVoiceSettingsChange with:', newSettings);
     onVoiceSettingsChange(newSettings);
   };
 
