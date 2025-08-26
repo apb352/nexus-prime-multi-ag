@@ -7,6 +7,7 @@ import { DebugPanel } from '@/components/DebugPanel';
 import { EmergencyStop } from '@/components/EmergencyStop';
 import { DiscordStatus } from '@/components/DiscordStatus';
 import { SimpleTestComponent } from '@/components/SimpleTestComponent';
+import { ChatHistoryTest } from '@/components/ChatHistoryTest';
 import { useAgents } from '@/hooks/use-agents';
 import { windowManager } from '@/lib/window-manager';
 import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
@@ -188,6 +189,7 @@ function App() {
       {import.meta.env.DEV && (
         <div className="fixed bottom-4 right-4 z-50 space-y-2">
           <SimpleTestComponent />
+          <ChatHistoryTest />
         </div>
       )}
       

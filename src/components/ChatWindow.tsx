@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useKV } from '@github/spark/hooks';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,6 +86,9 @@ export function ChatWindow({
   const { addMessage, getAgentHistory } = useChatHistory();
   const { updateAgent } = useAgents();
   const messages = getAgentHistory(agent.id);
+  
+  // Track if welcome message has been shown for this agent
+  const [welcomeShown, setWelcomeShown] = useKV(`nexus-welcome-shown-${agent.id}`, false);
 
   // Handle message selection from search
   const handleMessageSelect = (messageIndex: number) => {
@@ -109,8 +113,8 @@ export function ChatWindow({
 
   // Add welcome message for new chats to introduce image generation
   useEffect(() => {
-    // Only add welcome message if this is a new chat with no messages
-    if (messages.length === 0) {
+    // Only show welcome message for truly new agents (no history and haven't shown welcome)
+    if (messages.length === 0 && !welcomeShown) {
       const welcomeMessage = currentImageSettings?.enabled 
         ? `Hello! I'm ${agent.name}. I'm ready to chat with you!
 
@@ -126,16 +130,16 @@ What would you like to talk about or create today?`
 
 What would you like to talk about today?`;
 
-      // Small delay to ensure component is fully mounted
-      setTimeout(() => {
-        addMessage(agent.id, {
-          content: welcomeMessage,
-          sender: 'ai',
-          agentId: agent.id
-        });
-      }, 100);
+      // Add welcome message and mark as shown
+      addMessage(agent.id, {
+        content: welcomeMessage,
+        sender: 'ai',
+        agentId: agent.id
+      });
+      
+      setWelcomeShown(true);
     }
-  }, []); // Only run once when component mounts
+  }, [messages.length, welcomeShown, agent.id, agent.name, currentImageSettings?.enabled]);
 
   // Add keyboard shortcut for stopping voice
   useEffect(() => {
