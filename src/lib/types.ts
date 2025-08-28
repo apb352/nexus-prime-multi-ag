@@ -25,6 +25,17 @@ export interface ChatMessage {
   agentId: string;
   imageUrl?: string;
   imagePrompt?: string;
+  attachments?: FileAttachment[];
+}
+
+export interface FileAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  dataUrl?: string; // For previews
+  uploadDate: number;
 }
 
 export interface ChatWindow {
@@ -53,6 +64,7 @@ export interface GroupChatMessage {
   agentName: string;
   imageUrl?: string;
   imagePrompt?: string;
+  attachments?: FileAttachment[];
 }
 
 export interface GroupChat {

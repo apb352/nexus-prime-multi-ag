@@ -10,6 +10,7 @@ import { SimpleTestComponent } from '@/components/SimpleTestComponent';
 import { ChatHistoryTest } from '@/components/ChatHistoryTest';
 import { VoiceSettingsTest } from '@/components/VoiceSettingsTest';
 import { VoiceSettingsDebug } from '@/components/VoiceSettingsDebug';
+import { FileShareTest } from '@/components/FileShareTest';
 import { useAgents } from '@/hooks/use-agents';
 import { windowManager } from '@/lib/window-manager';
 import { AIAgent, ChatWindow as ChatWindowType, GroupChat } from '@/lib/types';
@@ -257,6 +258,7 @@ function App() {
         <div className="fixed bottom-4 right-4 z-50 space-y-2">
           <SimpleTestComponent />
           <ChatHistoryTest />
+          <FileShareTest />
         </div>
       )}
       

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
-import { GroupChat, GroupChatMessage, AIAgent } from '@/lib/types';
+import { GroupChat, GroupChatMessage, AIAgent, FileAttachment } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FileUploadButton, QuickFileButtons } from './FileUpload';
+import { AttachmentList, InlineAttachment } from './AttachmentPreview';
+import { fileService } from '@/lib/file-service';
 import { toast } from 'sonner';
 import { 
   X, 
@@ -48,6 +51,7 @@ export function GroupChatWindow({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   
   const windowRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -63,19 +67,22 @@ export function GroupChatWindow({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || isGenerating) return;
+    if ((!input.trim() && attachments.length === 0) || isGenerating) return;
 
+    const messageAttachments = [...attachments];
     const userMessage: GroupChatMessage = {
       id: Date.now().toString(),
-      content: input.trim(),
+      content: input.trim() || 'Shared files:',
       sender: 'user',
       timestamp: Date.now(),
       agentId: 'user',
-      agentName: 'You'
+      agentName: 'You',
+      attachments: messageAttachments
     };
 
     setMessages(current => [...current, userMessage]);
     setInput('');
+    setAttachments([]);
     setIsGenerating(true);
 
     try {
@@ -126,10 +133,36 @@ export function GroupChatWindow({
   const generateAgentResponse = async (agent: AIAgent, currentMessages: GroupChatMessage[]) => {
     if (!agent) return;
 
-    const conversationHistory = currentMessages
-      .slice(-10) // Last 10 messages for context
-      .map(m => `${m.agentName}: ${m.content}`)
-      .join('\n');
+    // Build conversation history with file attachments
+    const conversationHistory = await Promise.all(
+      currentMessages
+        .slice(-10) // Last 10 messages for context
+        .map(async (m) => {
+          let messageText = `${m.agentName}: ${m.content}`;
+          
+          // Add attachment context if present
+          if (m.attachments && m.attachments.length > 0) {
+            try {
+              const attachmentDescriptions = await Promise.all(
+                m.attachments.map(async (attachment) => {
+                  try {
+                    return await fileService.getFileDescription(attachment);
+                  } catch (error) {
+                    return `File: ${attachment.name} (${fileService.formatFileSize(attachment.size)})`;
+                  }
+                })
+              );
+              messageText += `\n[Shared files: ${attachmentDescriptions.join(', ')}]`;
+            } catch (error) {
+              messageText += `\n[Shared ${m.attachments.length} file(s)]`;
+            }
+          }
+          
+          return messageText;
+        })
+    );
+
+    const conversationHistoryText = (await Promise.all(conversationHistory)).join('\n');
 
     const turnBasedContext = groupChat.turnBasedMode 
       ? "You are in a turn-based group conversation. After the user speaks, each agent gets one turn to respond. Keep your response focused and meaningful since everyone will get a chance to speak."
@@ -142,7 +175,7 @@ Current mood: ${agent.mood}
 ${turnBasedContext}
 
 Here's the recent conversation:
-${conversationHistory}
+${conversationHistoryText}
 
 Respond as ${agent.name} in character. Keep your response conversational and engaging, around 1-2 sentences. Show your unique personality and interact naturally with the other participants.`;
 
@@ -350,6 +383,18 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Display attachments if present */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {message.attachments.map((attachment) => (
+                          <InlineAttachment 
+                            key={attachment.id} 
+                            attachment={attachment} 
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {new Date(message.timestamp).toLocaleTimeString()}
@@ -383,27 +428,63 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
           </div>
         )}
         
+        {/* Attachment preview */}
+        {attachments.length > 0 && (
+          <div className="mb-3">
+            <AttachmentList
+              attachments={attachments}
+              onRemove={(id) => setAttachments(prev => prev.filter(a => a.id !== id))}
+              className="max-h-40 overflow-y-auto"
+            />
+          </div>
+        )}
+        
         <div className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            disabled={isGenerating}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 min-h-[40px] max-h-[120px] resize-none pr-12"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              disabled={isGenerating}
+            />
+            
+            {/* File upload button inside textarea */}
+            <div className="absolute right-2 top-2">
+              <FileUploadButton 
+                onFileSelect={(newAttachments) => 
+                  setAttachments(prev => [...prev, ...newAttachments])
+                }
+                className="p-1"
+              />
+            </div>
+          </div>
+          
           <Button 
             onClick={handleSendMessage}
-            disabled={!input.trim() || isGenerating}
+            disabled={(!input.trim() && attachments.length === 0) || isGenerating}
             className="self-end"
           >
             <Send size={16} />
           </Button>
+        </div>
+        
+        {/* Quick file buttons */}
+        <div className="flex justify-between items-center mt-2">
+          <QuickFileButtons 
+            onFileSelect={(newAttachments) => 
+              setAttachments(prev => [...prev, ...newAttachments])
+            }
+          />
+          <div className="text-xs text-muted-foreground">
+            {attachments.length > 0 && `${attachments.length} file(s) attached`}
+          </div>
         </div>
       </div>
 

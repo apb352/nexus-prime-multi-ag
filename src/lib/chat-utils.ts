@@ -3,6 +3,8 @@
  */
 
 import { internetService } from './internet-service';
+import { fileService } from './file-service';
+import { FileAttachment } from './types';
 
 export interface ChatEnhancementOptions {
   internetEnabled: boolean;
@@ -13,6 +15,7 @@ export interface ChatEnhancementOptions {
   agentMood: string;
   imageEnabled?: boolean;
   hasImageGeneration?: boolean;
+  attachments?: FileAttachment[];
 }
 
 export interface ChatPromptResult {
@@ -27,11 +30,38 @@ export interface ChatPromptResult {
 export async function createEnhancedChatPrompt(
   options: ChatEnhancementOptions
 ): Promise<ChatPromptResult> {
-  const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood, imageEnabled = false } = options;
+  const { internetEnabled, autoSearch, userMessage, agentName, agentPersonality, agentMood, imageEnabled = false, attachments = [] } = options;
   
   // Use very conservative cleaning to avoid any content filter triggers
   const cleanAgentName = (agentName || 'Assistant').slice(0, 50).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Assistant';
   const cleanUserMessage = (userMessage || '').slice(0, 200).replace(/[^a-zA-Z0-9\s.,?!']/g, ' ').replace(/\s+/g, ' ').trim() || 'Help me please';
+  
+  let internetContext = '';
+  let internetSummary = '';
+  
+  // Handle file attachments
+  let fileContext = '';
+  if (attachments && attachments.length > 0) {
+    console.log('Processing file attachments:', attachments.length);
+    
+    try {
+      const fileDescriptions = await Promise.all(
+        attachments.map(async (attachment) => {
+          try {
+            return await fileService.getFileDescription(attachment);
+          } catch (error) {
+            console.error('Error processing attachment:', error);
+            return `File: ${attachment.name} (${fileService.formatFileSize(attachment.size)})`;
+          }
+        })
+      );
+      
+      fileContext = `\n\nAttached Files:\n${fileDescriptions.join('\n\n')}`;
+    } catch (error) {
+      console.error('Error processing attachments:', error);
+      fileContext = `\n\nUser shared ${attachments.length} file(s) but could not process them.`;
+    }
+  }
   
   let internetContext = '';
   let internetSummary = '';
@@ -108,13 +138,13 @@ export async function createEnhancedChatPrompt(
     // Use the simplest possible format to avoid content filters
     prompt = `Question: ${cleanUserMessage}
 
-Context: ${internetContext}${imageContext}
+Context: ${internetContext}${imageContext}${fileContext}
 
 Please provide a helpful answer.`;
   } else {
     console.log('Creating basic prompt without internet context');
     // Extremely simple format
-    prompt = `Question: ${cleanUserMessage}${imageContext}
+    prompt = `Question: ${cleanUserMessage}${imageContext}${fileContext}
 
 Please provide a helpful answer.`;
   }

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Minus, Send, Settings, SpeakerHigh, Image as ImageIcon, Stop } from '@phosphor-icons/react';
-import { AIAgent, ChatMessage, ChatWindow as ChatWindowType } from '@/lib/types';
+import { AIAgent, ChatMessage, ChatWindow as ChatWindowType, FileAttachment } from '@/lib/types';
 import { useChatHistory } from '@/hooks/use-chat-history';
 import { useAgents } from '@/hooks/use-agents';
 import { Avatar3D } from './Avatar3D';
@@ -18,9 +18,12 @@ import { ImageViewer } from './ImageViewer';
 import { SpeakingOverlay } from './SpeakingOverlay';
 import { VoiceVisualization } from './VoiceVisualization';
 import { ChatWindowSearch } from './ChatWindowSearch';
+import { FileUploadButton, QuickFileButtons } from './FileUpload';
+import { AttachmentList, InlineAttachment } from './AttachmentPreview';
 import { voiceService, VOICE_PROFILES, VoiceSettings } from '@/lib/voice-service';
 import { discordService } from '@/lib/discord-service';
 import { ImageService, ImageSettings, defaultImageSettings } from '@/lib/image-service';
+import { fileService } from '@/lib/file-service';
 import { createEnhancedChatPrompt, createBasicChatPrompt, cleanUserMessage, getCapabilityExplanation } from '@/lib/chat-utils';
 import { windowManager } from '@/lib/window-manager';
 import { toast } from 'sonner';
@@ -74,6 +77,7 @@ export function ChatWindow({
     timestamp: number;
     style: string;
   }>>([]);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   
   // Keep current image settings in local state to avoid timing issues
   const [currentImageSettings, setCurrentImageSettings] = useState<ImageSettings>(
@@ -421,20 +425,23 @@ Would you like me to try generating a simpler version, or would you prefer to us
   };
 
   const handleSendMessage = async () => {
-    if (!message || !message.trim() || isLoading) return;
+    if ((!message || !message.trim()) && attachments.length === 0 || isLoading) return;
 
     const userMessage = cleanUserMessage(message.trim());
+    const messageAttachments = [...attachments];
     setMessage('');
+    setAttachments([]);
     setIsLoading(true);
 
     // Create abort controller for this request
     abortControllerRef.current = new AbortController();
 
-    // Add user message
+    // Add user message with attachments
     addMessage(agent.id, {
-      content: userMessage,
+      content: userMessage || 'Shared files:',
       sender: 'user',
-      agentId: agent.id
+      agentId: agent.id,
+      attachments: messageAttachments
     });
 
     try {
@@ -604,7 +611,8 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
           agentName: agent.name,
           agentPersonality: agent.personality,
           agentMood: agent.mood,
-          imageEnabled: agent.imageSettings?.enabled ?? false
+          imageEnabled: agent.imageSettings?.enabled ?? false,
+          attachments: messageAttachments
         });
         
         console.log('Enhanced prompt created. Internet context:', promptResult.hasInternetContext);
@@ -1266,6 +1274,18 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
               
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               
+              {/* Display attachments if present */}
+              {msg.attachments && msg.attachments.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {msg.attachments.map((attachment) => (
+                    <InlineAttachment 
+                      key={attachment.id} 
+                      attachment={attachment} 
+                    />
+                  ))}
+                </div>
+              )}
+              
               {/* Display generated image if present */}
               {msg.imageUrl && (
                 <div className="mt-2">
@@ -1388,25 +1408,61 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
 
       {/* Input */}
       <div className="p-4 border-t border-border">
+        {/* Attachment preview */}
+        {attachments.length > 0 && (
+          <div className="mb-3">
+            <AttachmentList
+              attachments={attachments}
+              onRemove={(id) => setAttachments(prev => prev.filter(a => a.id !== id))}
+              className="max-h-40 overflow-y-auto"
+            />
+          </div>
+        )}
+        
         <div className="flex space-x-2">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder={`Message ${agent.name}... (Shift+Enter for new line)`}
-            className="flex-1 min-h-0 resize-none"
-            rows={1}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={`Message ${agent.name}... (Shift+Enter for new line)`}
+              className="flex-1 min-h-0 resize-none pr-12"
+              rows={1}
+            />
+            
+            {/* File upload button inside textarea */}
+            <div className="absolute right-2 top-2">
+              <FileUploadButton 
+                onFileSelect={(newAttachments) => 
+                  setAttachments(prev => [...prev, ...newAttachments])
+                }
+                className="p-1"
+              />
+            </div>
+          </div>
+          
           <Button
             onClick={handleSendMessage}
-            disabled={!message || !message.trim() || isLoading}
+            disabled={(!message || !message.trim()) && attachments.length === 0 || isLoading}
             size="sm"
             style={{ backgroundColor: agent.color }}
             title="Send message (Enter to send, Shift+Enter for new line)"
           >
             <Send size={16} />
           </Button>
+        </div>
+        
+        {/* Quick file buttons */}
+        <div className="flex justify-between items-center mt-2">
+          <QuickFileButtons 
+            onFileSelect={(newAttachments) => 
+              setAttachments(prev => [...prev, ...newAttachments])
+            }
+          />
+          <div className="text-xs text-muted-foreground">
+            {attachments.length > 0 && `${attachments.length} file(s) attached`}
+          </div>
         </div>
       </div>
 
