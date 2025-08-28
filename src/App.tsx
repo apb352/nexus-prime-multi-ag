@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { AgentGrid } from '@/components/AgentGrid';
 import { ChatWindow } from '@/components/ChatWindow';
+import { GroupChatWindow } from '@/components/GroupChatWindow';
+import { CreateGroupChatDialog } from '@/components/CreateGroupChatDialog';
 import { TopNavigation } from '@/components/TopNavigation';
 import { DebugPanel } from '@/components/DebugPanel';
 import { SimpleTestComponent } from '@/components/SimpleTestComponent';
@@ -10,12 +12,13 @@ import { VoiceSettingsTest } from '@/components/VoiceSettingsTest';
 import { VoiceSettingsDebug } from '@/components/VoiceSettingsDebug';
 import { useAgents } from '@/hooks/use-agents';
 import { windowManager } from '@/lib/window-manager';
-import { AIAgent, ChatWindow as ChatWindowType } from '@/lib/types';
+import { AIAgent, ChatWindow as ChatWindowType, GroupChat } from '@/lib/types';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
   const [chatWindows, setChatWindows] = useKV<ChatWindowType[]>('nexus-chat-windows', []);
+  const [groupChats, setGroupChats] = useKV<GroupChat[]>('nexus-group-chats', []);
   const [showDebug, setShowDebug] = useState(false);
   const { agents, updateAgentStatus, updateAgent, getAgent } = useAgents();
 
@@ -85,6 +88,46 @@ function App() {
     );
   };
 
+  const handleCreateGroupChat = (groupChat: GroupChat) => {
+    setGroupChats((current) => [...current, groupChat]);
+  };
+
+  const handleCloseGroupChat = (groupChatId: string) => {
+    setGroupChats((current) => current.filter(gc => gc.id !== groupChatId));
+  };
+
+  const handleMinimizeGroupChat = (groupChatId: string) => {
+    setGroupChats((current) =>
+      current.map(gc =>
+        gc.id === groupChatId ? { ...gc, isMinimized: !gc.isMinimized } : gc
+      )
+    );
+  };
+
+  const handleUpdateGroupChatPosition = (groupChatId: string, position: { x: number; y: number }) => {
+    setGroupChats((current) =>
+      current.map(gc =>
+        gc.id === groupChatId ? { ...gc, position } : gc
+      )
+    );
+  };
+
+  const handleUpdateGroupChatSize = (groupChatId: string, size: { width: number; height: number }) => {
+    setGroupChats((current) =>
+      current.map(gc =>
+        gc.id === groupChatId ? { ...gc, size } : gc
+      )
+    );
+  };
+
+  const handleUpdateGroupChat = (groupChatId: string, updates: Partial<GroupChat>) => {
+    setGroupChats((current) =>
+      current.map(gc =>
+        gc.id === groupChatId ? { ...gc, ...updates } : gc
+      )
+    );
+  };
+
   const handleStopAll = () => {
     console.log('Emergency stop all triggered');
     
@@ -103,6 +146,9 @@ function App() {
       return [];
     });
     
+    // Clear all group chats too
+    setGroupChats([]);
+    
     // Show confirmation toast
     toast.success('Emergency stop activated - all AI operations stopped');
   };
@@ -110,14 +156,21 @@ function App() {
   const handleStopWindow = (windowId: string) => {
     console.log('Emergency stop window triggered for:', windowId);
     
-    // Force stop operations in specific window
-    windowManager.forceStopWindow(windowId);
+    // Check if it's a regular chat window or group chat
+    const isGroupChat = groupChats.some(gc => gc.id === windowId);
+    const isChatWindow = chatWindows.some(w => w.id === windowId);
     
-    // Then close the window normally
-    handleCloseWindow(windowId);
-    
-    // Show confirmation toast
-    toast.success('Window stopped and closed');
+    if (isGroupChat) {
+      // Force stop operations in specific group chat
+      windowManager.forceStopWindow(windowId);
+      handleCloseGroupChat(windowId);
+      toast.success('Group chat stopped and closed');
+    } else if (isChatWindow) {
+      // Force stop operations in specific window
+      windowManager.forceStopWindow(windowId);
+      handleCloseWindow(windowId);
+      toast.success('Window stopped and closed');
+    }
   };
 
   const handleUpdateSize = (windowId: string, size: { width: number; height: number }) => {
@@ -140,10 +193,16 @@ function App() {
       <TopNavigation
         onStopAll={handleStopAll}
         onStopWindow={handleStopWindow}
-        activeWindows={chatWindows.map(w => ({
-          id: w.id,
-          agentName: getAgent(w.agentId)?.name || 'Unknown Agent'
-        }))}
+        activeWindows={[
+          ...chatWindows.map(w => ({
+            id: w.id,
+            agentName: getAgent(w.agentId)?.name || 'Unknown Agent'
+          })),
+          ...groupChats.map(gc => ({
+            id: gc.id,
+            agentName: gc.name
+          }))
+        ]}
         showDebug={showDebug}
         onToggleDebug={import.meta.env.DEV ? () => setShowDebug(!showDebug) : undefined}
       />
@@ -151,6 +210,14 @@ function App() {
       {/* Main content */}
       <div className="relative z-10">
         <AgentGrid onAgentSelect={handleAgentSelect} />
+        
+        {/* Group Chat Button */}
+        <div className="fixed top-20 right-4 z-30">
+          <CreateGroupChatDialog 
+            agents={agents} 
+            onCreateGroupChat={handleCreateGroupChat} 
+          />
+        </div>
       </div>
 
       {/* Chat windows */}
@@ -170,6 +237,20 @@ function App() {
           />
         );
       })}
+
+      {/* Group Chat windows */}
+      {groupChats.map((groupChat) => (
+        <GroupChatWindow
+          key={groupChat.id}
+          groupChat={groupChat}
+          agents={agents}
+          onClose={handleCloseGroupChat}
+          onMinimize={handleMinimizeGroupChat}
+          onUpdatePosition={handleUpdateGroupChatPosition}
+          onUpdateSize={handleUpdateGroupChatSize}
+          onUpdateGroupChat={handleUpdateGroupChat}
+        />
+      ))}
       
       {/* Test fixes component - only in development */}
       {import.meta.env.DEV && (

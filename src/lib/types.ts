@@ -44,11 +44,37 @@ export interface ChatWindow {
   showCanvas?: boolean;
 }
 
+export interface GroupChatMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'ai';
+  timestamp: number;
+  agentId: string;
+  agentName: string;
+  imageUrl?: string;
+  imagePrompt?: string;
+}
+
+export interface GroupChat {
+  id: string;
+  name: string;
+  participants: string[]; // agent IDs
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  isMinimized: boolean;
+  selectedModel: string;
+  turnBasedMode: boolean;
+  currentTurn: number; // index in participants array
+  autoAdvanceTurn: boolean;
+}
+
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';
 
 export interface AppState {
   theme: Theme;
   agents: AIAgent[];
   chatWindows: ChatWindow[];
+  groupChats: GroupChat[];
   chatHistory: Record<string, ChatMessage[]>;
+  groupChatHistory: Record<string, GroupChatMessage[]>;
 }
