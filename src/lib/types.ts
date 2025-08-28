@@ -64,8 +64,6 @@ export interface GroupChat {
   isMinimized: boolean;
   selectedModel: string;
   turnBasedMode: boolean;
-  currentTurn: number; // index in participants array
-  autoAdvanceTurn: boolean;
 }
 
 export type Theme = 'cyberpunk' | 'minimalist' | 'cozy';

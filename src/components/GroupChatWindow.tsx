@@ -18,11 +18,7 @@ import {
   Minus, 
   Send, 
   Settings, 
-  Users, 
-  SkipForward,
-  Play,
-  Pause,
-  Crown,
+  Users,
   MessageCircle
 } from '@phosphor-icons/react';
 
@@ -57,7 +53,6 @@ export function GroupChatWindow({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const participantAgents = agents.filter(agent => groupChat.participants.includes(agent.id));
-  const currentAgent = participantAgents[groupChat.currentTurn];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -85,15 +80,8 @@ export function GroupChatWindow({
 
     try {
       if (groupChat.turnBasedMode) {
-        // In turn-based mode, only the current agent responds
-        await generateAgentResponse(currentAgent, [...messages, userMessage]);
-        
-        // Auto-advance to next turn if enabled
-        if (groupChat.autoAdvanceTurn) {
-          setTimeout(() => {
-            handleNextTurn();
-          }, 1000);
-        }
+        // In turn-based mode, generate responses for each agent in sequence
+        await generateTurnBasedResponses([...messages, userMessage]);
       } else {
         // In free-form mode, all agents can respond
         // Add small delays between responses for natural flow
@@ -111,6 +99,30 @@ export function GroupChatWindow({
     }
   };
 
+  const generateTurnBasedResponses = async (currentMessages: GroupChatMessage[]) => {
+    // Generate responses for each agent in sequence, one at a time
+    for (let i = 0; i < participantAgents.length; i++) {
+      const agent = participantAgents[i];
+      if (!agent) continue;
+
+      // Show which agent is currently responding
+      toast.info(`${agent.name} is responding...`, { duration: 2000 });
+      
+      // Wait a bit before generating the response for natural pacing
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await generateAgentResponse(agent, currentMessages);
+      
+      // Add a delay between agents for better user experience
+      if (i < participantAgents.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+    
+    // All agents have responded, ready for user's next message
+    toast.success('All agents have responded. Your turn!');
+  };
+
   const generateAgentResponse = async (agent: AIAgent, currentMessages: GroupChatMessage[]) => {
     if (!agent) return;
 
@@ -119,11 +131,17 @@ export function GroupChatWindow({
       .map(m => `${m.agentName}: ${m.content}`)
       .join('\n');
 
+    const turnBasedContext = groupChat.turnBasedMode 
+      ? "You are in a turn-based group conversation. After the user speaks, each agent gets one turn to respond. Keep your response focused and meaningful since everyone will get a chance to speak."
+      : "You are in a free-flowing group conversation with other AI agents.";
+
     const prompt = spark.llmPrompt`You are ${agent.name}, an AI agent with this personality: ${agent.personality}
 
 Current mood: ${agent.mood}
 
-You are participating in a group chat with other AI agents. Here's the recent conversation:
+${turnBasedContext}
+
+Here's the recent conversation:
 ${conversationHistory}
 
 Respond as ${agent.name} in character. Keep your response conversational and engaging, around 1-2 sentences. Show your unique personality and interact naturally with the other participants.`;
@@ -144,14 +162,6 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
     } catch (error) {
       console.error(`Error generating response for ${agent.name}:`, error);
     }
-  };
-
-  const handleNextTurn = () => {
-    const nextTurn = (groupChat.currentTurn + 1) % participantAgents.length;
-    if (onUpdateGroupChat) {
-      onUpdateGroupChat(groupChat.id, { currentTurn: nextTurn });
-    }
-    toast.info(`Turn passed to ${participantAgents[nextTurn]?.name}`);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -234,8 +244,8 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
           </Badge>
           {groupChat.turnBasedMode && (
             <Badge variant="outline" className="text-xs flex items-center gap-1">
-              <Crown size={12} />
-              {currentAgent?.name}
+              <Users size={12} />
+              Turn-based
             </Badge>
           )}
         </div>
@@ -251,7 +261,14 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium">Model</Label>
-                  <Select value={groupChat.selectedModel}>
+                  <Select 
+                    value={groupChat.selectedModel}
+                    onValueChange={(value) => {
+                      if (onUpdateGroupChat) {
+                        onUpdateGroupChat(groupChat.id, { selectedModel: value as 'gpt-4o' | 'gpt-4o-mini' });
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -264,23 +281,23 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
                 
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">Turn-based mode</Label>
-                  <Switch checked={groupChat.turnBasedMode} />
+                  <Switch 
+                    checked={groupChat.turnBasedMode}
+                    onCheckedChange={(checked) => {
+                      if (onUpdateGroupChat) {
+                        onUpdateGroupChat(groupChat.id, { turnBasedMode: checked });
+                      }
+                    }}
+                  />
                 </div>
-                
-                {groupChat.turnBasedMode && (
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Auto-advance turns</Label>
-                    <Switch checked={groupChat.autoAdvanceTurn} />
-                  </div>
-                )}
                 
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Participants</Label>
                   <div className="flex flex-wrap gap-1">
-                    {participantAgents.map((agent, index) => (
+                    {participantAgents.map((agent) => (
                       <Badge
                         key={agent.id}
-                        variant={groupChat.turnBasedMode && index === groupChat.currentTurn ? "default" : "secondary"}
+                        variant="secondary"
                         className="text-xs"
                       >
                         {agent.name}
@@ -358,15 +375,11 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
       {/* Input area */}
       <div className="p-4 border-t border-border bg-muted/10">
         {groupChat.turnBasedMode && (
-          <div className="flex items-center justify-between mb-3 p-2 bg-muted/20 rounded">
-            <div className="flex items-center gap-2 text-sm">
-              <Crown size={16} className="text-primary" />
-              <span>Current turn: <strong>{currentAgent?.name}</strong></span>
+          <div className="flex items-center justify-center mb-3 p-2 bg-primary/10 rounded border border-primary/20">
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Users size={16} />
+              <span>Turn-based mode: Each agent will respond after you send a message</span>
             </div>
-            <Button variant="outline" size="sm" onClick={handleNextTurn}>
-              <SkipForward size={14} />
-              Next Turn
-            </Button>
           </div>
         )}
         

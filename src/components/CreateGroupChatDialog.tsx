@@ -23,7 +23,6 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
   const [name, setName] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [turnBasedMode, setTurnBasedMode] = useState(true);
-  const [autoAdvanceTurn, setAutoAdvanceTurn] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
 
   const availableAgents = agents.filter(agent => agent.id !== 'user');
@@ -55,9 +54,7 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
       size: { width: 500, height: 650 },
       isMinimized: false,
       selectedModel,
-      turnBasedMode,
-      currentTurn: 0,
-      autoAdvanceTurn
+      turnBasedMode
     };
 
     onCreateGroupChat(newGroupChat);
@@ -65,7 +62,6 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
     // Reset form
     setName('');
     setSelectedAgents([]);
-    setAutoAdvanceTurn(false);
     setOpen(false);
 
     toast.success(`Created group chat "${newGroupChat.name}"`);
@@ -123,7 +119,7 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
               <div>
                 <Label>Turn-based mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Agents take turns speaking in order
+                  Each agent responds once after you send a message
                 </p>
               </div>
               <Switch
@@ -131,21 +127,6 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
                 onCheckedChange={setTurnBasedMode}
               />
             </div>
-
-            {turnBasedMode && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Auto-advance turns</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically move to next agent after response
-                  </p>
-                </div>
-                <Switch
-                  checked={autoAdvanceTurn}
-                  onCheckedChange={setAutoAdvanceTurn}
-                />
-              </div>
-            )}
           </div>
 
           {/* Agent Selection */}
@@ -165,7 +146,7 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{agent.name}</span>
                           <Badge variant="outline" className="text-xs">
-                            {agent.expertise}
+                            {agent.mood}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
@@ -178,26 +159,6 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
               ))}
             </div>
           </div>
-
-          {/* Turn Order Preview */}
-          {turnBasedMode && selectedAgents.length > 0 && (
-            <div className="space-y-2">
-              <Label>Turn Order</Label>
-              <div className="flex flex-wrap gap-2">
-                {selectedAgents.map((agentId, index) => {
-                  const agent = agents.find(a => a.id === agentId);
-                  return agent ? (
-                    <div key={agentId} className="flex items-center gap-1">
-                      <span className="text-sm text-muted-foreground">{index + 1}.</span>
-                      <Badge variant="secondary">
-                        {agent.name}
-                      </Badge>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div>
-          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setOpen(false)}>
