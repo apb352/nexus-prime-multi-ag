@@ -1,39 +1,45 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Palette, DiscordLogo, StopCircle, AlertTriangle, Bug } from '@phosphor-icons/react';
 import { useTheme } from '@/hooks/use-theme';
-];
-interface TopNavigationProps {
-  onStopWindow: (windowId: string) =
 
+type Theme = 'cyberpunk' | 'minimalist' | 'cozy';
+
+interface TopNavigationProps {
+  onStopAll: () => void;
+  onStopWindow: (windowId: string) => void;
+  activeWindows: Array<{
+    id: string;
+    agentName: string;
+    isGroupChat?: boolean;
+    groupTopic?: string;
+  }>;
+  showDebug: boolean;
+  onToggleDebug?: () => void;
 }
-export function TopNavigation({
-  onStopWindow,
-  showDebug,
-];
 
-interface TopNavigationProps {
-
-    onStopAll();
-  };
+// Discord Status Component
+function DiscordStatus() {
   return (
-      <div className="flex it
+    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+      <DiscordLogo size={16} />
+      <span>Discord Ready</span>
+    </div>
+  );
 }
 
 export function TopNavigation({
-
+  onStopAll,
   onStopWindow,
-          <Selec
+  activeWindows,
   showDebug,
-            </S
+  onToggleDebug
 }: TopNavigationProps) {
   const { theme, setTheme } = useTheme();
   const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   const hasActiveWindows = activeWindows.length > 0;
 
@@ -62,70 +68,42 @@ export function TopNavigation({
               <SelectValue placeholder="Theme" />
             </SelectTrigger>
             <SelectContent className="z-[2500]">
-                  </AlertDescription>
-                
-                  variant="destructive"
-                  className="w-full"
-                >
-                  Stop A
+              <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
+              <SelectItem value="minimalist">Minimalist</SelectItem>
+              <SelectItem value="cozy">Cozy</SelectItem>
+            </SelectContent>
+          </Select>
 
-                 
-                    {activeW
-                   
-
-                          onStopWi
-                        }}
-                      >
-                     
-                          : `Agen
-                      </B
-                  </div>
-              </div>
-          </Dia
-          {/* Debug Toggle (Development Only) */}
-            <Button
-              size="sm"
-              className="h-8 
-            >
-              {showDebug ? 'Hide' : 'Debug'}
-          )}
-      </div>
-  );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          {/* Emergency Stop */}
+          <Dialog open={showEmergencyDialog} onOpenChange={setShowEmergencyDialog}>
+            <DialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 nav-button"
+                title="Emergency stop all AI operations"
+              >
+                <StopCircle size={14} className="mr-1" />
+                Emergency Stop
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center space-x-2">
+                  <AlertTriangle size={20} className="text-destructive" />
+                  <span>Emergency Stop</span>
+                </DialogTitle>
+                <DialogDescription>
+                  This will immediately stop all AI operations and close all chat windows.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                <Alert variant="destructive">
+                  <AlertTriangle size={16} />
+                  <AlertDescription>
+                    All active conversations will be stopped and windows will be closed.
+                    This action cannot be undone.
                   </AlertDescription>
                 </Alert>
                 
