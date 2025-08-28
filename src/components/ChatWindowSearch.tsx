@@ -97,7 +97,7 @@ export function ChatWindowSearch({ messages, onMessageSelect }: ChatWindowSearch
               />
             </div>
             {searchQuery && (
-              <Button variant="ghost" size="sm" onClick={clearSearch} className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" onClick={clearSearch} className="h-8 w-8 p-0" title="Clear search">
                 <X size={14} />
               </Button>
             )}
@@ -115,6 +115,7 @@ export function ChatWindowSearch({ messages, onMessageSelect }: ChatWindowSearch
                   onClick={() => navigateResult('up')}
                   disabled={searchResults.length === 0}
                   className="h-6 w-6 p-0"
+                  title="Previous search result"
                 >
                   <ChevronUp size={12} />
                 </Button>
@@ -124,6 +125,7 @@ export function ChatWindowSearch({ messages, onMessageSelect }: ChatWindowSearch
                   onClick={() => navigateResult('down')}
                   disabled={searchResults.length === 0}
                   className="h-6 w-6 p-0"
+                  title="Next search result"
                 >
                   <ChevronDown size={12} />
                 </Button>

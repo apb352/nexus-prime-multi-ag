@@ -255,6 +255,7 @@ export function VoiceControls({
                   size="sm"
                   onClick={handleTestVoice}
                   disabled={isSpeaking}
+                  title="Test current voice settings with sample text"
                 >
                   {isSpeaking ? 'Stop' : 'Test Voice'}
                 </Button>

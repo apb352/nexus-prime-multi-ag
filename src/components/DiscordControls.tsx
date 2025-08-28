@@ -156,6 +156,7 @@ export function DiscordControls({ agent, onAgentUpdate, className }: DiscordCont
                   onClick={handleTestMessage}
                   className="w-full"
                   disabled={!bridgeEnabled}
+                  title="Send test message to Discord channel"
                 >
                   <Share className="w-4 h-4 mr-2" />
                   Send Test Message

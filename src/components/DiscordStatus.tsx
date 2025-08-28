@@ -8,9 +8,10 @@ import { DiscordBotManager } from './DiscordBotManager';
 
 interface DiscordStatusProps {
   className?: string;
+  showLabel?: boolean;
 }
 
-export function DiscordStatus({ className }: DiscordStatusProps) {
+export function DiscordStatus({ className, showLabel = true }: DiscordStatusProps) {
   const [settings, setSettings] = useState<DiscordSettings>(discordService.getSettings());
   const [isConnected, setIsConnected] = useState(false);
   const [showManager, setShowManager] = useState(false);
@@ -55,30 +56,45 @@ export function DiscordStatus({ className }: DiscordStatusProps) {
   };
 
   return (
-    <Popover open={showManager} onOpenChange={setShowManager}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={`relative ${className}`}
-          title="Discord Integration Status"
+    <div className={className}>
+      {showLabel ? (
+        <Popover open={showManager} onOpenChange={setShowManager}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="relative"
+              title="Discord Integration Status"
+            >
+              <DiscordLogo size={14} className="mr-1" />
+              <Badge variant="outline" className={`${getStatusColor()} text-xs px-1 py-0`}>
+                {getStatusIcon()}
+              </Badge>
+              {isConnected && settings.enabled && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent 
+            className="w-[500px] p-0 z-[2500]" 
+            side="top"
+            align="end"
+          >
+            <DiscordBotManager />
+          </PopoverContent>
+        </Popover>
+      ) : (
+        // Compact mode - just the status indicator
+        <div 
+          className={`relative flex items-center justify-center w-6 h-6 rounded-full border ${getStatusColor()}`}
+          title={getStatusText()}
         >
-          <DiscordLogo size={14} className="mr-1" />
-          <Badge variant="outline" className={`${getStatusColor()} text-xs px-1 py-0`}>
-            {getStatusIcon()}
-          </Badge>
+          {getStatusIcon()}
           {isConnected && settings.enabled && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[500px] p-0 z-[2500]" 
-        side="top"
-        align="end"
-      >
-        <DiscordBotManager />
-      </PopoverContent>
-    </Popover>
+        </div>
+      )}
+    </div>
   );
 }

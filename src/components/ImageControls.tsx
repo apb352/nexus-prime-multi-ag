@@ -164,6 +164,7 @@ export function ImageControls({
                   disabled={isGenerating || !settings.imageGenEnabled}
                   className="flex-1"
                   size="sm"
+                  title="Generate a random artistic image"
                 >
                   {isGenerating ? (
                     <>

@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { AgentGrid } from '@/components/AgentGrid';
 import { ChatWindow } from '@/components/ChatWindow';
-import { ThemeSelector } from '@/components/ThemeSelector';
+import { TopNavigation } from '@/components/TopNavigation';
 import { DebugPanel } from '@/components/DebugPanel';
-import { EmergencyStop } from '@/components/EmergencyStop';
-import { DiscordStatus } from '@/components/DiscordStatus';
 import { SimpleTestComponent } from '@/components/SimpleTestComponent';
 import { ChatHistoryTest } from '@/components/ChatHistoryTest';
 import { VoiceSettingsTest } from '@/components/VoiceSettingsTest';
@@ -139,30 +137,16 @@ function App() {
         <div className="absolute top-0 right-1/4 w-1 h-full bg-gradient-to-b from-accent to-transparent animate-matrix-rain" style={{ animationDelay: '2s' }} />
       </div>
 
-      <ThemeSelector />
-      
-      {/* Discord Status */}
-      <DiscordStatus className="fixed top-16 right-4 z-50" />
-      
-      {/* Emergency Stop */}
-      <EmergencyStop
+      <TopNavigation
         onStopAll={handleStopAll}
         onStopWindow={handleStopWindow}
         activeWindows={chatWindows.map(w => ({
           id: w.id,
           agentName: getAgent(w.agentId)?.name || 'Unknown Agent'
         }))}
+        showDebug={showDebug}
+        onToggleDebug={import.meta.env.DEV ? () => setShowDebug(!showDebug) : undefined}
       />
-      
-      {/* Debug toggle - hidden in production */}
-      {import.meta.env.DEV && (
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="fixed top-4 right-40 z-50 bg-primary text-primary-foreground px-2 py-1 rounded text-xs"
-        >
-          {showDebug ? 'Hide Debug' : 'Show Debug'}
-        </button>
-      )}
       
       {/* Main content */}
       <div className="relative z-10">

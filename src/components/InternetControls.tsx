@@ -170,6 +170,7 @@ export function InternetControls({
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(false)}
+              title="Close internet settings"
             >
               <X size={14} />
             </Button>
@@ -261,6 +262,7 @@ export function InternetControls({
                       size="sm"
                       onClick={() => handleAddDomain('blocked')}
                       disabled={!newDomain || !newDomain.trim()}
+                      title="Add domain to blocked list"
                     >
                       Block
                     </Button>
@@ -301,6 +303,7 @@ export function InternetControls({
                       size="sm"
                       onClick={() => handleAddDomain('allowed')}
                       disabled={!newDomain || !newDomain.trim()}
+                      title="Add domain to allowed list"
                     >
                       Allow
                     </Button>
@@ -330,6 +333,7 @@ export function InternetControls({
                   disabled={isLoading}
                   className="w-full"
                   variant="outline"
+                  title="Test internet search functionality"
                 >
                   <Search size={16} className="mr-2" />
                   {isLoading ? 'Testing...' : 'Test Search'}
