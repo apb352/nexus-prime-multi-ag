@@ -1415,24 +1415,28 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
       <div
         className="absolute top-0 left-2 right-2 h-1 cursor-n-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
         onMouseDown={(e) => handleResizeStart(e, 'n')}
+        title="Resize window from top edge"
       />
       
       {/* Bottom edge */}
       <div
         className="absolute bottom-0 left-2 right-2 h-1 cursor-s-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
         onMouseDown={(e) => handleResizeStart(e, 's')}
+        title="Resize window from bottom edge"
       />
       
       {/* Left edge */}
       <div
         className="absolute left-0 top-2 bottom-2 w-1 cursor-w-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
         onMouseDown={(e) => handleResizeStart(e, 'w')}
+        title="Resize window from left edge"
       />
       
       {/* Right edge */}
       <div
         className="absolute right-0 top-2 bottom-2 w-1 cursor-e-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
         onMouseDown={(e) => handleResizeStart(e, 'e')}
+        title="Resize window from right edge"
       />
       
       {/* Resize handles - Corners */}
@@ -1440,24 +1444,28 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
       <div
         className="absolute top-0 left-0 w-2 h-2 cursor-nw-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
         onMouseDown={(e) => handleResizeStart(e, 'nw')}
+        title="Resize window from top-left corner"
       />
       
       {/* Top-right corner */}
       <div
         className="absolute top-0 right-0 w-2 h-2 cursor-ne-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
         onMouseDown={(e) => handleResizeStart(e, 'ne')}
+        title="Resize window from top-right corner"
       />
       
       {/* Bottom-left corner */}
       <div
         className="absolute bottom-0 left-0 w-2 h-2 cursor-sw-resize opacity-0 hover:opacity-75 transition-opacity bg-primary/30"
         onMouseDown={(e) => handleResizeStart(e, 'sw')}
+        title="Resize window from bottom-left corner"
       />
       
       {/* Bottom-right corner with visible handle */}
       <div
         className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
         onMouseDown={(e) => handleResizeStart(e, 'se')}
+        title="Resize window from bottom-right corner"
       >
         <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
         <div className="absolute bottom-2 right-2 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/30" />

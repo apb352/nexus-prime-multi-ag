@@ -140,6 +140,7 @@ export function InternetControls({
         <Button
           variant="ghost"
           size="sm"
+          onClick={handleToggleInternet}
           className={`relative ${internetEnabled ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-foreground'}`}
           title={internetEnabled ? "Internet access enabled - Click to configure" : "Enable internet access for web searches"}
         >

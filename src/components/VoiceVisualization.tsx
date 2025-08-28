@@ -25,10 +25,13 @@ export function VoiceVisualization({
 
   if (variant === 'floating') {
     return (
-      <div className={cn(
-        'absolute -top-2 -right-2 z-10',
-        className
-      )}>
+      <div 
+        className={cn(
+          'absolute -top-2 -right-2 z-10',
+          className
+        )}
+        title={isActive ? "Agent is currently speaking" : "Voice ready"}
+      >
         <div className="relative">
           {/* Ripple effect */}
           {isActive && (
@@ -47,11 +50,14 @@ export function VoiceVisualization({
 
   if (variant === 'embedded') {
     return (
-      <div className={cn(
-        'flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-full border border-primary/20',
-        isActive && 'bg-primary/20 border-primary/40',
-        className
-      )}>
+      <div 
+        className={cn(
+          'flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-full border border-primary/20',
+          isActive && 'bg-primary/20 border-primary/40',
+          className
+        )}
+        title={isActive ? "Agent is currently speaking" : "Voice synthesis ready"}
+      >
         <div className="flex items-center gap-1">
           <div className={cn(
             'w-2 h-2 rounded-full bg-primary',
@@ -72,10 +78,13 @@ export function VoiceVisualization({
 
   // inline variant (default)
   return (
-    <div className={cn(
-      'flex items-center gap-2',
-      className
-    )}>
+    <div 
+      className={cn(
+        'flex items-center gap-2',
+        className
+      )}
+      title={isActive ? "Agent is speaking - Voice level indicator" : "Voice level indicator"}
+    >
       <VoiceLevelIndicator 
         isActive={isActive} 
         size="sm" 
