@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { AIAgent, GroupChat } from '@/lib/types';
+import { Button } from '@/components/ui/button';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/chec
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+interface CreateGroupChatDialogProps {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,13 +14,13 @@ import { toast } from 'sonner';
 
 interface CreateGroupChatDialogProps {
   agents: AIAgent[];
-  onCreateGroupChat: (groupChat: GroupChat) => void;
+  const [turnBasedMode, setTurnBasedMode] = useState
   children?: React.ReactNode;
-}
+ 
 
 export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: CreateGroupChatDialogProps) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
+        : [...current, agentId]
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [turnBasedMode, setTurnBasedMode] = useState(true);
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
@@ -30,60 +30,63 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
   const handleAgentToggle = (agentId: string) => {
     setSelectedAgents(current => 
       current.includes(agentId)
-        ? current.filter(id => id !== agentId)
+    const newGroupChat: GroupChat = {
         : [...current, agentId]
-    );
+      
   };
 
   const handleCreate = () => {
     if (!name.trim()) {
       toast.error('Please enter a group chat name');
-      return;
-    }
+    
+    s
 
     if (selectedAgents.length < 2) {
       toast.error('Please select at least 2 agents');
       return;
     }
 
-    const newGroupChat: GroupChat = {
+        {children || (
       id: `group-${Date.now()}`,
-      name: name.trim(),
+            Create Group
       participants: selectedAgents,
       position: { x: 200 + Math.random() * 100, y: 150 + Math.random() * 100 },
       size: { width: 500, height: 650 },
-      isMinimized: false,
+          <DialogTitle cl
       selectedModel,
-      turnBasedMode
+      turnBasedMode,
+      currentTurn: 0,
+        <div classNam
     };
 
     onCreateGroupChat(newGroupChat);
     
     // Reset form
-    setName('');
+                
     setSelectedAgents([]);
+            </div>
     setOpen(false);
 
     toast.success(`Created group chat "${newGroupChat.name}"`);
-  };
+    
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+              </Select>
         {children || (
           <Button variant="outline" className="flex items-center gap-2">
             <MessageCircle size={16} />
-            Create Group Chat
+            <div className="f
           </Button>
-        )}
+          
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="text-primary" />
-            Create Group Chat
+          </div>
           </DialogTitle>
-        </DialogHeader>
+          <div classNam
         
         <div className="space-y-6">
           {/* Basic Settings */}
@@ -91,15 +94,15 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
             <div>
               <Label htmlFor="chat-name">Group Chat Name</Label>
               <Input
-                id="chat-name"
+                      <div cla
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter a name for your group chat..."
                 className="mt-1"
               />
-            </div>
+                  
 
-            <div>
+                 
               <Label>AI Model</Label>
               <Select value={selectedModel} onValueChange={setSelectedModel}>
                 <SelectTrigger className="mt-1">
@@ -111,7 +114,7 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
                 </SelectContent>
               </Select>
             </div>
-          </div>
+}
 
           {/* Chat Mode Settings */}
           <div className="space-y-4">
@@ -119,57 +122,91 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
               <div>
                 <Label>Turn-based mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Each agent responds once after you send a message
+                  Agents take turns speaking in order
                 </p>
               </div>
               <Switch
-                checked={turnBasedMode}
-                onCheckedChange={setTurnBasedMode}
-              />
-            </div>
-          </div>
 
-          {/* Agent Selection */}
-          <div className="space-y-4">
-            <Label>Select Participants ({selectedAgents.length} selected)</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-              {availableAgents.map((agent) => (
-                <Card key={agent.id} className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-3">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id={`agent-${agent.id}`}
-                        checked={selectedAgents.includes(agent.id)}
-                        onCheckedChange={() => handleAgentToggle(agent.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{agent.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {agent.mood}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {agent.personality}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreate} disabled={!name.trim() || selectedAgents.length < 2}>
-              Create Group Chat
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
