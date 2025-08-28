@@ -6,62 +6,62 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Palette, DiscordLogo, StopCircle, AlertTriangle, Bug } from '@phosphor-icons/react';
 import { useTheme } from '@/hooks/use-theme';
-import { DiscordBotManager } from './DiscordBotManager';
+const THEMES: { value: Theme; label: string; description
 import { DiscordStatus } from './DiscordStatus';
-import { Theme } from '@/lib/types';
+  { value: 'cozy', label: 'Cozy', de
 
-const THEMES: { value: Theme; label: string; description: string }[] = [
+interface TopNavigationProps {
   { value: 'cyberpunk', label: 'Cyberpunk', description: 'Neon blues and electric energy' },
   { value: 'minimalist', label: 'Minimalist', description: 'Clean whites and subtle grays' },
   { value: 'cozy', label: 'Cozy', description: 'Warm browns and comfortable tones' }
-];
+}
 
-interface TopNavigationProps {
+  onStopAll, 
   onStopAll: () => void;
   onStopWindow: (windowId: string) => void;
   activeWindows: Array<{ id: string; agentName?: string; isGroupChat?: boolean; groupTopic?: string }>;
   showDebug?: boolean;
   onToggleDebug?: () => void;
-}
 
-export function TopNavigation({ 
+
+    setShowEmergencyDialog(false
   onStopAll, 
-  onStopWindow, 
+  const hasActiv
   activeWindows, 
-  showDebug = false, 
+    <div className="f
   onToggleDebug 
-}: TopNavigationProps) {
-  const { theme, setTheme } = useTheme();
-  const [showSettings, setShowSettings] = useState(false);
-  const [showEmergencyDialog, setShowEmergencyDialog] = useState(false);
+                  <div c
+                </div>
+            ))}
+        </Select>
 
-  const handleStopAll = () => {
-    onStopAll();
-    setShowEmergencyDialog(false);
-  };
+          <PopoverTrigger asChi
+              va
+              className="h-8 nav-b
+    
 
-  const hasActiveWindows = activeWindows.length > 0;
+          </PopoverTrigger>
 
-  return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in-from-top">
-      {/* Main Navigation Container */}
-      <div className="flex items-center gap-3 glass-nav rounded-xl p-2 shadow-2xl">
+          
+            <DiscordBotManager />
+        </Popover>
+        {/* Emergency Stop */}
         
-        {/* Discord Status Indicator */}
-        <DiscordStatus showLabel={false} />
+              variant="destructive"
+              className="h-8 nav-button bg-
         
-        {/* Theme Selector */}
-        <Select value={theme} onValueChange={(value: Theme) => setTheme(value)}>
-          <SelectTrigger className="w-36 h-8 nav-button bg-background/50 border-border/30 hover:bg-background/70" title="Change visual theme">
-            <div className="flex items-center space-x-2">
-              <Palette size={14} />
-              <SelectValue />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="z-[2600]">
-            {THEMES.map((themeOption) => (
-              <SelectItem key={themeOption.value} value={themeOption.value}>
-                <div>
+              <StopCircle size
+            </Button>
+          
+            <DialogHeader>
+                <AlertTriangle size
+              </DialogTitle>
+                St
+            </DialogHeader
+            <div className="space-y-4">
+                <AlertTriangle size={16} /
+                  Use these controls if AI agents are stuck in loops or beha
+              </Alert
                   <div className="font-medium">{themeOption.label}</div>
                   <div className="text-xs text-muted-foreground">{themeOption.description}</div>
                 </div>
@@ -76,7 +76,7 @@ export function TopNavigation({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 nav-button bg-background/50 border-border/30 hover:bg-background/70"
+              className="h-8 bg-background/50 border-border/30 hover:bg-background/70 transition-colors"
               title="Discord bot configuration and setup"
             >
               <DiscordLogo size={14} className="mr-1" />
@@ -98,7 +98,7 @@ export function TopNavigation({
             <Button
               variant="destructive"
               size="sm"
-              className="h-8 nav-button bg-red-600/90 hover:bg-red-700 border-red-500/30 shadow-lg animate-button-press"
+              className="h-8 bg-red-600/90 hover:bg-red-700 border-red-500/30 transition-all duration-200 shadow-lg"
               disabled={!hasActiveWindows}
               title="Emergency stop all AI operations"
             >
@@ -126,17 +126,17 @@ export function TopNavigation({
                 </AlertDescription>
               </Alert>
               
-              <div className="space-y-2">
+
                 <Button
-                  variant="destructive"
+
                   onClick={handleStopAll}
                   className="w-full"
                   disabled={!hasActiveWindows}
-                >
+
                   <StopCircle size={16} className="mr-2" />
                   Stop All AI Operations
                 </Button>
-                
+
                 {activeWindows.length > 0 && (
                   <div className="border rounded-lg p-3 space-y-2">
                     <h4 className="text-sm font-medium">Stop Individual Windows:</h4>
@@ -144,23 +144,23 @@ export function TopNavigation({
                       <Button
                         key={window.id}
                         variant="outline"
-                        size="sm"
+
                         onClick={() => {
                           onStopWindow(window.id);
                           setShowEmergencyDialog(false);
                         }}
                         className="w-full justify-start text-left"
-                      >
+
                         <StopCircle size={14} className="mr-2" />
                         {window.isGroupChat 
                           ? `Group: ${window.groupTopic}`
-                          : window.agentName
+
                         }
-                      </Button>
+
                     ))}
                   </div>
                 )}
-              </div>
+
             </div>
           </DialogContent>
         </Dialog>
@@ -170,15 +170,15 @@ export function TopNavigation({
           <Button
             variant="outline"
             size="sm"
-            onClick={onToggleDebug}
-            className="h-8 nav-button bg-background/50 border-border/30 hover:bg-background/70"
+
+            className="h-8 bg-background/50 border-border/30 hover:bg-background/70 transition-colors"
             title="Toggle debug panel"
           >
             <Bug size={14} className="mr-1" />
             {showDebug ? 'Hide' : 'Debug'}
           </Button>
         )}
-      </div>
+
     </div>
-  );
+
 }
