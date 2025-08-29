@@ -63,9 +63,6 @@ export async function createEnhancedChatPrompt(
     }
   }
   
-  let internetContext = '';
-  let internetSummary = '';
-  
   // Handle internet search if enabled (with better error handling)
   if (internetEnabled) {
     try {
