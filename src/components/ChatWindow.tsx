@@ -59,7 +59,7 @@ export function ChatWindow({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
   const [initialPosition, setInitialPosition] = useState({ x: 0, y: 0 });
-  const [zIndex, setZIndex] = useState(1500);
+  const [zIndex, setZIndex] = useState(1500 + parseInt(window.id.slice(-4)));
   const [internetEnabled, setInternetEnabled] = useState(agent.internetSettings?.enabled ?? false);
   const [autoSearch, setAutoSearch] = useState(agent.internetSettings?.autoSearch ?? false);
   const [isTestMode, setIsTestMode] = useState(false);
@@ -840,8 +840,9 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
   };
 
   const handleWindowClick = () => {
-    // Bring window to front
-    setZIndex(1500 + Date.now() % 1000);
+    // Bring window to front with proper z-index management
+    const newZIndex = 2000 + Date.now() % 1000;
+    setZIndex(newZIndex);
   };
 
   const handleManualSpeak = async (message: ChatMessage) => {
@@ -878,13 +879,20 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     }
   };
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - window.position.x,
-        y: e.clientY - window.position.y
-      });
+    // Only start dragging if clicking on the header itself, not on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]') || target.closest('.voice-controls') || target.closest('select')) {
+      return;
     }
+    
+    // Bring window to front
+    handleWindowClick();
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - window.position.x,
+      y: e.clientY - window.position.y
+    });
   };
 
   const handleResizeStart = (e: React.MouseEvent, direction: string) => {
@@ -898,13 +906,16 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     setInitialPosition({ x: window.position.x, y: window.position.y });
   };
 
+  // Remove duplicate mouse handlers - keep only one set
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        onUpdatePosition(window.id, {
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y
-        });
+        const screenWidth = window.innerWidth || 1920;
+        const screenHeight = window.innerHeight || 1080;
+        const newX = Math.max(0, Math.min(screenWidth - window.size.width, e.clientX - dragStart.x));
+        const newY = Math.max(0, Math.min(screenHeight - window.size.height, e.clientY - dragStart.y));
+        
+        onUpdatePosition(window.id, { x: newX, y: newY });
       }
       
       if (isResizing && resizeDirection) {
@@ -918,21 +929,27 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
 
         // Handle horizontal resizing
         if (resizeDirection.includes('e')) {
-          newWidth = Math.max(300, initialSize.width + deltaX);
+          newWidth = Math.max(400, initialSize.width + deltaX);
         }
         if (resizeDirection.includes('w')) {
-          newWidth = Math.max(300, initialSize.width - deltaX);
+          newWidth = Math.max(400, initialSize.width - deltaX);
           newX = initialPosition.x + (initialSize.width - newWidth);
         }
 
         // Handle vertical resizing
         if (resizeDirection.includes('s')) {
-          newHeight = Math.max(400, initialSize.height + deltaY);
+          newHeight = Math.max(500, initialSize.height + deltaY);
         }
         if (resizeDirection.includes('n')) {
-          newHeight = Math.max(400, initialSize.height - deltaY);
+          newHeight = Math.max(500, initialSize.height - deltaY);
           newY = initialPosition.y + (initialSize.height - newHeight);
         }
+
+        // Constrain to screen bounds
+        const screenWidth = window.innerWidth || 1920;
+        const screenHeight = window.innerHeight || 1080;
+        newWidth = Math.min(newWidth, screenWidth - newX);
+        newHeight = Math.min(newHeight, screenHeight - newY);
 
         // Update size and position
         onUpdateSize(window.id, { width: newWidth, height: newHeight });
@@ -1039,38 +1056,20 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
 
   // Handle mouse events for dragging and resizing
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        onUpdatePosition(window.id, {
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y
-        });
-      } else if (isResizing) {
-        const rect = windowRef.current?.getBoundingClientRect();
-        if (rect) {
-          onUpdateSize(window.id, {
-            width: Math.max(350, e.clientX - rect.left),
-            height: Math.max(400, e.clientY - rect.top)
-          });
-        }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // ESC key to stop speaking
+      if (e.key === 'Escape' && isSpeaking) {
+        handleStopSpeaking();
       }
     };
 
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      setIsResizing(false);
-    };
-
-    // Only add event listeners in browser environment
-    if (typeof document !== 'undefined' && (isDragging || isResizing)) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isDragging, isResizing, dragStart, window.id, onUpdatePosition, onUpdateSize]);
+  }, [isSpeaking]);
 
   if (window.isMinimized) {
     return (
@@ -1116,12 +1115,12 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 border-b border-border cursor-move select-none"
+        className="flex items-center justify-between p-3 border-b border-border cursor-move select-none"
         onMouseDown={handleMouseDown}
         style={{ backgroundColor: `${agent.color}20` }}
       >
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="w-8 h-8 flex-shrink-0">
             <Avatar3D
               avatarType={agent.avatar}
               color={agent.color}
@@ -1131,9 +1130,9 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
               isSpeaking={isSpeaking || isLoading}
             />
           </div>
-          <div className="flex flex-col">
-            <h3 className="font-semibold text-foreground">{agent.name}</h3>
-            <p className="text-xs text-muted-foreground">{agent.mood}</p>
+          <div className="flex flex-col min-w-0">
+            <h3 className="font-semibold text-foreground text-sm truncate">{agent.name}</h3>
+            <p className="text-xs text-muted-foreground truncate">{agent.mood}</p>
             {/* Global voice indicator in header with stop hint */}
             {agent.voiceSettings?.enabled && isSpeaking && (
               <div className="flex items-center gap-2 mt-1">
@@ -1146,8 +1145,13 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
               </div>
             )}
           </div>
+        </div>
+        
+        {/* Controls section - organized into groups */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Model selector */}
           <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-40 h-8 text-xs">
+            <SelectTrigger className="w-32 h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="z-[2500]">
@@ -1159,13 +1163,14 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             </SelectContent>
           </Select>
           
+          {/* Feature controls */}
           <VoiceControls
             key={`voice-${agent.id}-${JSON.stringify(agent.voiceSettings)}`}
             voiceSettings={agent.voiceSettings}
             onVoiceSettingsChange={handleVoiceSettingsChange}
             onSpeak={handleSpeakMessage}
             onStopSpeaking={handleStopSpeaking}
-            className="mr-2"
+            className="flex-shrink-0"
           />
           
           <InternetControls
@@ -1180,7 +1185,7 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
           <DiscordControls
             agent={agent}
             onAgentUpdate={updateAgent}
-            className="mr-2"
+            className="flex-shrink-0"
           />
           
           <ImageControls
@@ -1195,22 +1200,23 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
               variant="ghost"
               size="sm"
               onClick={() => setShowCanvas(!showCanvas)}
-              className={`relative ${showCanvas ? 'text-accent bg-accent/20' : 'text-muted-foreground hover:text-accent'}`}
+              className={`relative flex-shrink-0 ${showCanvas ? 'text-accent bg-accent/20' : 'text-muted-foreground hover:text-accent'}`}
               title="Interactive Canvas Drawing"
             >
-              <ImageIcon size={16} />
+              <ImageIcon size={14} />
               {!showCanvas && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full animate-pulse" />
               )}
             </Button>
           )}
           
+          {/* Utility controls */}
           <Button
             variant="outline"
             size="sm"
             onClick={handleTestAPI}
             disabled={isLoading}
-            className="text-xs"
+            className="text-xs h-7 px-2 flex-shrink-0"
             title="Test API Connection"
           >
             {isTestMode ? 'Testing...' : 'Test'}
@@ -1221,22 +1227,25 @@ Try asking: *"draw me a beautiful sunset"* or *"create an image of a magical for
             onMessageSelect={handleMessageSelect}
           />
           
+          {/* Window controls */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onMinimize(window.id)}
+            className="h-7 w-7 p-0 flex-shrink-0"
             title="Minimize window"
           >
-            <Minus size={16} />
+            <Minus size={14} />
           </Button>
           
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onClose(window.id)}
+            className="h-7 w-7 p-0 flex-shrink-0"
             title="Close window"
           >
-            <X size={16} />
+            <X size={14} />
           </Button>
         </div>
       </div>

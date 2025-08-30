@@ -39,15 +39,18 @@ function App() {
       return;
     }
 
-    // Create new chat window
+    // Create new chat window with better positioning
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+    
     const newWindow: ChatWindowType = {
       id: `${agent.id}-${Date.now()}`,
       agentId: agent.id,
       position: {
-        x: 100 + (chatWindows.length * 50),
-        y: 100 + (chatWindows.length * 50)
+        x: Math.max(50, Math.min(screenWidth - 450, 100 + (chatWindows.length * 50))),
+        y: Math.max(80, Math.min(screenHeight - 650, 100 + (chatWindows.length * 50)))
       },
-      size: { width: 400, height: 600 },
+      size: { width: 450, height: 650 },
       isMinimized: false,
       selectedModel: 'gpt-4o',
       voiceEnabled: agent.voiceSettings?.enabled ?? false,

@@ -198,20 +198,25 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.drag-handle')) {
-      setIsDragging(true);
-      const rect = windowRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-        });
-      }
+    // Only start dragging if clicking on header, not on buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]') || target.closest('select')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
     }
   };
 
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
+  const handleResizeMouseDown = (e: React.MouseEvent, direction: string) => {
     e.stopPropagation();
+    e.preventDefault();
     setIsResizing(true);
     setResizeStart({
       x: e.clientX,
@@ -224,14 +229,26 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        onUpdatePosition(groupChat.id, {
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y
-        });
+        const screenWidth = window.innerWidth || 1920;
+        const screenHeight = window.innerHeight || 1080;
+        const newX = Math.max(0, Math.min(screenWidth - groupChat.size.width, e.clientX - dragOffset.x));
+        const newY = Math.max(0, Math.min(screenHeight - groupChat.size.height, e.clientY - dragOffset.y));
+        
+        onUpdatePosition(groupChat.id, { x: newX, y: newY });
       } else if (isResizing) {
-        const newWidth = Math.max(300, resizeStart.width + (e.clientX - resizeStart.x));
-        const newHeight = Math.max(400, resizeStart.height + (e.clientY - resizeStart.y));
-        onUpdateSize(groupChat.id, { width: newWidth, height: newHeight });
+        const deltaX = e.clientX - resizeStart.x;
+        const deltaY = e.clientY - resizeStart.y;
+        
+        const newWidth = Math.max(400, resizeStart.width + deltaX);
+        const newHeight = Math.max(500, resizeStart.height + deltaY);
+        
+        // Constrain to screen bounds
+        const screenWidth = window.innerWidth || 1920;
+        const screenHeight = window.innerHeight || 1080;
+        const constrainedWidth = Math.min(newWidth, screenWidth - groupChat.position.x);
+        const constrainedHeight = Math.min(newHeight, screenHeight - groupChat.position.y);
+        
+        onUpdateSize(groupChat.id, { width: constrainedWidth, height: constrainedHeight });
       }
     };
 
@@ -249,7 +266,7 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, resizeStart, groupChat.id, onUpdatePosition, onUpdateSize]);
+  }, [isDragging, isResizing, dragOffset, resizeStart, groupChat.id, groupChat.size, groupChat.position, onUpdatePosition, onUpdateSize]);
 
   if (groupChat.isMinimized) {
     return null;
@@ -258,39 +275,40 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
   return (
     <Card
       ref={windowRef}
-      className="fixed z-[2000] border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl"
+      className="fixed border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden"
       style={{
         left: groupChat.position.x,
         top: groupChat.position.y,
         width: groupChat.size.width,
-        height: groupChat.size.height
+        height: groupChat.size.height,
+        zIndex: 2000 + parseInt(groupChat.id.slice(-4)) || 2000
       }}
       onMouseDown={handleMouseDown}
     >
       {/* Header */}
-      <div className="drag-handle flex items-center justify-between p-3 border-b border-border bg-muted/20 rounded-t-lg cursor-move">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="text-primary" weight="fill" />
-          <h3 className="font-semibold text-sm">{groupChat.name}</h3>
-          <Badge variant="secondary" className="text-xs">
+      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20 rounded-t-lg cursor-move select-none" onMouseDown={handleMouseDown}>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <MessageCircle className="text-primary flex-shrink-0" weight="fill" />
+          <h3 className="font-semibold text-sm truncate">{groupChat.name}</h3>
+          <Badge variant="secondary" className="text-xs flex-shrink-0">
             {participantAgents.length} agents
           </Badge>
           {groupChat.turnBasedMode && (
-            <Badge variant="outline" className="text-xs flex items-center gap-1">
+            <Badge variant="outline" className="text-xs flex items-center gap-1 flex-shrink-0">
               <Users size={12} />
               Turn-based
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Group chat settings">
                 <Settings size={14} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
+            <PopoverContent className="w-80 p-4 z-[2500]" align="end">
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium">Model</Label>
@@ -305,7 +323,7 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[2600]">
                       <SelectItem value="gpt-4o">GPT-4o</SelectItem>
                       <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                     </SelectContent>
@@ -342,10 +360,10 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
             </PopoverContent>
           </Popover>
           
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onMinimize(groupChat.id)}>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onMinimize(groupChat.id)} title="Minimize window">
             <Minus size={14} />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onClose(groupChat.id)}>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onClose(groupChat.id)} title="Close window">
             <X size={14} />
           </Button>
         </div>
@@ -488,11 +506,30 @@ Respond as ${agent.name} in character. Keep your response conversational and eng
         </div>
       </div>
 
-      {/* Resize handle */}
+      {/* Resize handles - better sizing system */}
+      {/* Bottom edge */}
       <div
-        className="absolute bottom-0 right-0 w-4 h-4 bg-muted/50 cursor-se-resize"
-        onMouseDown={handleResizeMouseDown}
+        className="absolute bottom-0 left-2 right-2 h-1 cursor-s-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeMouseDown(e, 's')}
+        title="Resize window from bottom edge"
       />
+      
+      {/* Right edge */}
+      <div
+        className="absolute right-0 top-2 bottom-2 w-1 cursor-e-resize opacity-0 hover:opacity-50 transition-opacity bg-primary/20"
+        onMouseDown={(e) => handleResizeMouseDown(e, 'e')}
+        title="Resize window from right edge"
+      />
+      
+      {/* Bottom-right corner with visible handle */}
+      <div
+        className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
+        onMouseDown={(e) => handleResizeMouseDown(e, 'se')}
+        title="Resize window from bottom-right corner"
+      >
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-muted-foreground/50" />
+        <div className="absolute bottom-2 right-2 w-2 h-2 border-r-2 border-b-2 border-muted-foreground/30" />
+      </div>
     </Card>
   );
 }

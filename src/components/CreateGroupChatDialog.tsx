@@ -46,12 +46,18 @@ export function CreateGroupChatDialog({ agents, onCreateGroupChat, children }: C
       return;
     }
 
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+    
     const newGroupChat: GroupChat = {
       id: `group-${Date.now()}`,
       name: name.trim(),
       participants: selectedAgents,
-      position: { x: 200 + Math.random() * 100, y: 150 + Math.random() * 100 },
-      size: { width: 500, height: 650 },
+      position: { 
+        x: Math.max(50, Math.min(screenWidth - 550, 200 + Math.random() * 100)), 
+        y: Math.max(80, Math.min(screenHeight - 700, 150 + Math.random() * 100))
+      },
+      size: { width: 550, height: 700 },
       isMinimized: false,
       selectedModel,
       turnBasedMode,

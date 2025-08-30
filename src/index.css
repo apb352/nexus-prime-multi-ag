@@ -139,9 +139,42 @@ body {
   z-index: 2500 !important;
 }
 
+/* Image controls popover */
+.image-controls-popover {
+  z-index: 2500 !important;
+}
+
+/* Internet controls popover */
+.internet-controls-popover {
+  z-index: 2500 !important;
+}
+
+/* Group chat settings popover */
+.group-settings-popover {
+  z-index: 2600 !important;
+}
+
 /* Ensure all radix portals are above chat windows */
 [data-radix-portal] {
   z-index: 2500 !important;
+}
+
+/* Higher specificity for group chat popovers */
+[data-radix-portal] > [data-radix-popover-content] {
+  z-index: 2600 !important;
+}
+
+/* Chat window z-index management */
+.chat-window {
+  z-index: var(--window-z-index, 1500);
+}
+
+.chat-window:hover {
+  z-index: var(--window-z-index, 1500);
+}
+
+.chat-window-active {
+  z-index: var(--window-z-index, 2000);
 }
 
 /* Custom animations for Nexus Prime */
